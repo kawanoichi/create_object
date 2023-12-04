@@ -17,5 +17,8 @@ use App\Http\Controllers\PythonController;
 Route::get('/', function () {
     return view('welcome');
 });
+Route::get('/home', function () {
+    return view('home');
+});
 
-Route::get('/home', [PythonController::class, 'runPythonScript']);
+// Route::get('/home', [PythonController::class, 'runPythonScript']);

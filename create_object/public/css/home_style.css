@@ -1,0 +1,7 @@
+@charset "utf-8";
+.header h1 {
+  	color: #8b1919;			/* 見出しテキストの色を指定する */
+	padding-left:10px;		/* ボックス内左側の余白を指定する */
+	border-left: 10px solid #31a9ee;	/* ボーダー左側のスタイルを指定する */
+  	border-bottom: 1px dashed #31a9ee; 	/* ボーダー下部のスタイルを指定する */
+}
