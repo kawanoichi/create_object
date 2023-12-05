@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
+// use Illuminate\Support\Facades\Artisan;
 
 class PythonController extends Controller
 {
@@ -12,7 +12,8 @@ class PythonController extends Controller
         // Pythonスクリプトを実行するコマンド
         $output = [];
         $returnCode = 0;
-        exec('python3 /var/www/html/src/read_image.py', $output, $returnCode);
+        exec('python3 /var/www/html/src/read_image.py',
+            $output, $returnCode);
 
         $pythonResult = implode("<br>", $output);
         return $pythonResult;

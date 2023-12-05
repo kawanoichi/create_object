@@ -13,12 +13,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 use App\Http\Controllers\PythonController;
+use App\Http\Controllers\ImageController;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+// http://localhost:8000/home
 Route::get('/home', function () {
     return view('home');
 });
 
-// Route::get('/home', [PythonController::class, 'runPythonScript']);
+Route::get('/home/execute', function () {return view('home');});
+Route::get('/home/execute', [PythonController::class, 'runPythonScript']);
+
+// Route::get('/home/action', [ImageController::class, 'upload']);
+Route::get('/upload-form', [ImageController::class, 'showForm']);
+Route::post('/upload', [ImageController::class, 'upload']);
+Route::get('/download/{imageName}', [ImageController::class, 'download'])->name('download');
