@@ -6,10 +6,13 @@ help:
 	@echo "$$ make permission"
 	
 	@echo Docker起動
-	@echo "$$ docker-start"
+	@echo "$$ make docker-start"
 	
 	@echo Docker終了
-	@echo "$$ docker-stop"
+	@echo "$$ make docker-stop"
+	
+	@echo Uploadした画像の削除
+	@echo "$$ make rm"
 
 
 docker-setup:
@@ -28,3 +31,6 @@ docker-start:
 
 docker-stop:
 	docker stop create_object
+
+rm:
+	rm -rf ~/create_object/create_object/storage/app/public/image_data/*.png
