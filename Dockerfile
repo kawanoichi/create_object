@@ -9,8 +9,20 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && docker-php-ext-install zip
 
-# Install Python
-RUN apt install -y python3
+# Install Python and necessary packages
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip python3-venv && \
+    apt-get clean
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Create and activate a virtual environment
+RUN python3 -m venv /venv
+ENV PATH="/venv/bin:$PATH"
+
+# Install opencv-python in the virtual environment
+RUN /venv/bin/pip install opencv-python
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -27,3 +39,5 @@ EXPOSE 80
 
 # CMD ["php-fpm"]
 CMD ["apache2-foreground"]
+
+
