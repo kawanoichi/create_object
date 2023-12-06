@@ -8,12 +8,24 @@
     <title>Image Upload</title>
 </head>
 <body>
-    <h1>Image Upload</h1>
 
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        @csrf
-        <input type="file" name="image" accept="image/*" required>
-        <button type="submit">Upload Image</button>
-    </form>
+    <div class="upload">
+        <h1>Image Upload</h1>
+    
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            @csrf
+            <input type="file" name="image" accept="image/*" required>
+            <button type="submit">Upload Image</button>
+        </form>
+    </div>
+
+    <div class="download">
+        <h1>ファイルをダウンロードする</h1>
+        <form action="/download/{filename}" method="get">
+            <input type="hidden" name="filename" value="example.txt">
+            <button type="submit">Download File</button>
+        </form>
+    </div>
+
 </body>
 </html>

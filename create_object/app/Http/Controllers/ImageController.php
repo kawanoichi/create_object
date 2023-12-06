@@ -53,8 +53,6 @@ class ImageController extends Controller
         // $convertedImageName = $output[0];
 
         // return redirect()->route('download', $convertedImageName);
-
-        return "OK";
     }
     
     public function download($imageName)
