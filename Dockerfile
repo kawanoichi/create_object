@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python and necessary packages
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip python3-venv && \
+    apt-get install -y python3 python3-pip python3-venv &&\
     apt-get clean
 
 # Set working directory
@@ -22,6 +22,7 @@ RUN python3 -m venv /venv
 ENV PATH="/venv/bin:$PATH"
 
 # Install opencv-python in the virtual environment
+RUN apt-get install -y libgl1-mesa-glx libglib2.0-dev
 RUN /venv/bin/pip install opencv-python
 
 # Install Composer
