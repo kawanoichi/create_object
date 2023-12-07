@@ -6,6 +6,14 @@ use Illuminate\Support\Facades\Storage;
 
 class ImageController extends Controller
 {
+    protected $imageDirPath;
+
+    public function __construct()
+    {
+        // コンストラクタで初期化
+        $this->imageDirPath = '/var/www/html/storage/app/public/image_data';
+    }
+
     public function showForm()
     {
         return view('upload_form');
@@ -33,36 +41,36 @@ class ImageController extends Controller
         $image->storeAs('public/image_data', $imageName);
 
         // パスの作成
-        $imageDirPath = '/var/www/html/storage/app/public/image_data';
         $executePythonCommand = 'python3 /var/www/html/src/read_image.py';
         
         // Pythonスクリプトを呼び出し
         $output = [];
         $returnCode = 0;
-        exec("{$executePythonCommand} {$imageDirPath}/{$imageName}", $output, $returnCode);
+        exec("{$executePythonCommand} {$this->imageDirPath}/{$imageName}", $output, $returnCode);
         if ($returnCode !== 0) {
             // エラーが発生した場合
             $errorMessage = implode("\n", $output);
             return response()->json(['error' => $errorMessage], 500);
         }
 
-        $pythonResult = implode("<br>", $output);
-        return $pythonResult;
+        // $pythonResult = implode("<br>", $output);
+        // return $pythonResult;
 
         // 変換後の画像ファイル名
-        // $convertedImageName = $output[0];
+        $imageName = time().'.'.$image->extension();
+        $outputFileName = $imageName[-1];
 
-        // return redirect()->route('download', $convertedImageName);
+        return redirect()->route('download', $imageName);
     }
     
-    public function download($imageName)
+    public function download($filename)
     {
-        $imagePath = storage_path("app/public/{$imageName}");
+        $path = storage_path("app/public/image_data/{$filename}");
 
-        if (file_exists($imagePath)) {
-            return response()->download($imagePath);
+        if (file_exists($path)) {
+            return response()->download($path, $filename);
         } else {
-            abort(404);
+            return response()->json(['error' => 'File not found.'], 404);
         }
     }
 

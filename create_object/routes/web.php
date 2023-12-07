@@ -25,7 +25,6 @@ Route::get('/home', function () {
 });
 
 
-Route::get('/home/action', [ImageController::class, 'upload']);
 Route::get('/upload-form', [ImageController::class, 'showForm']);
 Route::post('/upload', [ImageController::class, 'upload']);
 Route::get('/download/{imageName}', [ImageController::class, 'download'])->name('download');

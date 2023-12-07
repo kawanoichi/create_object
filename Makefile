@@ -26,6 +26,9 @@ permission:
 	sudo chmod -R 777 create_object
 	sudo chown -R www-data:www-data create_object 
 
+docker-terminal:
+	docker exec -i -t create_object bash
+
 docker-start:
 	docker start create_object
 
@@ -34,3 +37,8 @@ docker-stop:
 
 rm:
 	rm -rf ~/create_object/create_object/storage/app/public/image_data/*.png
+
+push:
+	git add .
+	git commit -m "update"
+	git push origin main

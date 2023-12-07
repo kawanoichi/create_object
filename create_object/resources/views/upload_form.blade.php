@@ -19,13 +19,5 @@
         </form>
     </div>
 
-    <div class="download">
-        <h1>ファイルをダウンロードする</h1>
-        <form action="/download/{filename}" method="get">
-            <input type="hidden" name="filename" value="example.txt">
-            <button type="submit">Download File</button>
-        </form>
-    </div>
-
 </body>
 </html>
