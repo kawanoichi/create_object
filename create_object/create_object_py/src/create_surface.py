@@ -11,6 +11,7 @@ $ make surface_run
 from image_processing import ImageProcessing as ImaP
 import rotate_coordinate as rotate
 from create_surface_param import Param
+
 import cv2
 import open3d as o3d
 import matplotlib.pyplot as plt
@@ -25,7 +26,8 @@ matplotlib.use('Agg')
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
-DATA_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+DATA_DIR_PATH = "/var/www/html/storage/app/public/data"
 
 
 class MakeSurface:
@@ -39,6 +41,7 @@ class MakeSurface:
         """
         self.point_file_dir = point_file_dir
         self.point_file_name = point_file_name
+        self.save_ply_name = os.path.splitext(point_file_name)[0] + ".ply"
         self.groupe = None
 
         # 表示する点群(散布図)に関する変数
@@ -356,7 +359,7 @@ class MakeSurface:
         # 点群や法線ベクトルの表示
         if Param.work_process:
             plt.show()
-            save_path = os.path.join(DATA_DIR_PATH, 'result.png')
+            save_path = os.path.join(WORK_DIR_PATH, 'result.png')
             plt.savefig(save_path)
 
         """
@@ -394,7 +397,8 @@ class MakeSurface:
             o3d.visualization.draw_geometries([recMeshBPA])
 
         # 生成したメッシュをPLYファイルに保存
-        save_path = os.path.join(DATA_DIR_PATH, 'output_mesh.ply')
+        save_path = os.path.join(DATA_DIR_PATH, self.save_ply_name)
+        print(f"save_path: {save_path}")
         o3d.io.write_triangle_mesh(save_path, recMeshBPA)
 
 
@@ -416,9 +420,9 @@ if __name__ == "__main__":
         print(massage)
     print(line)
 
-    file_name = "point_data.npy"
+    file_name = "airplane.npy"
 
-    ms = MakeSurface(point_file_dir=DATA_DIR_PATH,
+    ms = MakeSurface(point_file_dir=WORK_DIR_PATH,
                      point_file_name=file_name)
     ms.main()
 

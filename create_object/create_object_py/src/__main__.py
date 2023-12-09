@@ -7,7 +7,8 @@ from create_surface import MakeSurface
 SCRIPT_DIR_PATH = os.path.dirname(
     os.path.abspath(__file__))  # create_object_py/src
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)  # create_object_py
-DATA_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+DATA_DIR_PATH = "/var/www/html/storage/app/public/data"
 
 
 def main(image_name):
@@ -17,7 +18,7 @@ def main(image_name):
     pp.predict(image_name, point_file_name)
 
     # 表面情報の作成
-    ms = MakeSurface(point_file_dir=DATA_DIR_PATH,
+    ms = MakeSurface(point_file_dir=WORK_DIR_PATH,
                      point_file_name=point_file_name)
     ms.main()
 

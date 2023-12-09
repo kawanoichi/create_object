@@ -37,21 +37,60 @@ class ImageController extends Controller
         // $image->extension() : 拡張子を返す
         $imageName = time().'.'.$image->extension();
         
-        // 画像をstorage/app/public/image_dataディレクトリに保存
-        $image->storeAs('public/image_data', $imageName);
+        // 画像をstorage/app/public/dataディレクトリに保存
+        $image->storeAs('public/data', $imageName);
 
         // パスの作成
-        $executePythonCommand = 'python3 /var/www/html/src/read_image.py';
+        // $executePythonCommand = 'python3 /var/www/html/src/read_image.py';
+        // $executePythonCommand = 'cd /var/www/html/create_object_py && make run';
+        // $executePythonCommand = 'cd /var/www/html/create_object_py && python3 -V';
+        // $executePythonCommand = 'cd /var/www/html/create_object_py && poetry -V';
+        // $executePythonCommand = 'cd /var/www/html/create_object_py && poetry -V';
+        // $executePythonCommand = 'ls /root/.local/bin/poetry';
+        // $executePythonCommand = 'ls /root/.pyenv/shims/python3';
+        $executePythonCommand = 'which poetry';
+        // $executePythonCommand = 'pwd';
+        // $executePythonCommand = 'ls /usr/bin';
+        // $executePythonCommand = 'cd /var/www/html/create_object_py && poetry run python3 -m src airplane.png';
         
-        // Pythonスクリプトを呼び出し
+        // // Pythonスクリプトを呼び出し
         $output = [];
         $returnCode = 0;
-        exec("{$executePythonCommand} {$this->imageDirPath}/{$imageName}", $output, $returnCode);
+        exec("$executePythonCommand", $output, $returnCode);
+        // exec("{$executePythonCommand} {$this->imageDirPath}/{$imageName}", $output, $returnCode);
+
         if ($returnCode !== 0) {
             // エラーが発生した場合
             $errorMessage = implode("\n", $output);
+            \Log::error('Python Script Output: ' . implode("\n", $output));
             return response()->json(['error' => $errorMessage], 500);
         }
+
+        // $outputに"FileCheck-14"が含まれているかチェック
+        // if (strpos(implode("\n", $output), 'poetry') !== false) {
+        //     // "FileCheck-14"が含まれている場合の処理
+        //     \Log::info('FileCheck-14 found in output');
+        //     return "True";
+        // } else {
+        //     // "FileCheck-14"が含まれていない場合の処理
+        //     \Log::info('FileCheck-14 not found in output');
+        //     return "False";
+        // }
+        
+        return $output;
+
+        // // Pythonスクリプトのパス
+        // $pythonScriptPath = base_path('/var/www/html/create_object_py/src/read_image.py');
+
+        // // Poetryでスクリプトを実行するコマンド
+        // $command = "poetry run python $pythonScriptPath";
+
+        // // 実行
+        // $output = shell_exec($command);
+
+        // // 結果の出力
+        // dd($output);
+
 
         // $pythonResult = implode("<br>", $output);
         // return $pythonResult;
@@ -60,12 +99,12 @@ class ImageController extends Controller
         $imageName = time().'.'.$image->extension();
         $outputFileName = $imageName[-1];
 
-        return redirect()->route('download', $imageName);
+        // return redirect()->route('download', $imageName);
     }
     
     public function download($filename)
     {
-        $path = storage_path("app/public/image_data/{$filename}");
+        $path = storage_path("app/public/data/{$filename}");
 
         if (file_exists($path)) {
             return response()->download($path, $filename);

@@ -11,7 +11,7 @@ help:
 	@echo "$$ make format"
 
 run:
-	poetry run python3  -m src airplane.png
+	poetry run python3 -m src airplane.png
 
 predict:
 	poetry run python3 src/predict_point_cpu.py
@@ -24,4 +24,7 @@ permission:
 	chown -R www-data:www-data * 
 
 format:
-	poetry run python -m autopep8 -i -r src/ tests/
+	poetry run python3 -m autopep8 -i -r src/ tests/
+
+zikken:
+	python3 src/read_image.py

@@ -36,7 +36,7 @@ docker-stop:
 	docker stop create_object
 
 rm:
-	rm -rf ~/create_object/create_object/storage/app/public/image_data/*.png
+	find ~/create_object/create_object/storage/app/public/data -type f -not -name 'airplane.png' -delete
 
 push:
 	git add .

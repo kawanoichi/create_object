@@ -16,19 +16,18 @@ from model import generator
 SCRIPT_DIR_PATH = os.path.dirname(
     os.path.abspath(__file__))  # create_object_py/src
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)  # create_object_py
-DATA_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+DATA_DIR_PATH = "/var/www/html/storage/app/public/data"
 
 
 class Predict_Point:
     """画像から3Dオブジェクトを生成するクラス."""
 
     def __init__(self,
-                 model_path=os.path.join(DATA_DIR_PATH, "modelG_50.pth"),
-                 num_points=2048,
-                 save_dir=DATA_DIR_PATH):
+                 model_path=os.path.join(WORK_DIR_PATH, "modelG_50.pth"),
+                 num_points=2048):
         self.model_path = model_path
         self.num_points = num_points
-        self.save_dir = save_dir
 
     def predict(self, image_name, save_file_name=None):
         """学習済みモデルを使用して画像から点群を生成する."""
@@ -38,17 +37,6 @@ class Predict_Point:
             print("Error: image is not exist")
             print("Search path is ", read_img_path)
             exit()
-
-        # 予測点群の保存path
-        try:
-            os.makedirs(self.save_dir)
-        except OSError:
-            pass
-
-        if save_file_name is None:
-            save_file_name = os.path.splitext(image_name)[0] + ".npy"
-        pre_save_path = os.path.join(self.save_dir, save_file_name)
-        print("pre_save_path", pre_save_path)
 
         # 画像読み込み(128, 128, 3)
         image = cv2.imread(read_img_path)
@@ -93,12 +81,18 @@ class Predict_Point:
         predict_points = np.transpose(points, (1, 0))
 
         # 予測座標の保存
+        if save_file_name is None:
+            save_file_name = os.path.splitext(image_name)[0] + ".npy"
+        pre_save_path = os.path.join(WORK_DIR_PATH, save_file_name)
+
         np.save(pre_save_path, predict_points)
 
 
 if __name__ == "__main__":
-    print(f"SCRIPT_DIR_PATH: {SCRIPT_DIR_PATH}")
+    print(f"SCRIPT_DIR_PATH : {SCRIPT_DIR_PATH}")
     print(f"PROJECT_DIR_PATH: {PROJECT_DIR_PATH}")
+    print(f"WORK_DIR_PATH   : {WORK_DIR_PATH}")
+    print(f"DATA_DIR_PATH   : {DATA_DIR_PATH}")
 
     # 画像のファイル名
     image_name = "airplane.png"
