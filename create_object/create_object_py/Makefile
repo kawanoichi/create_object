@@ -28,3 +28,6 @@ format:
 
 zikken:
 	python3 src/read_image.py
+
+env_pip:
+	bash create_env.sh

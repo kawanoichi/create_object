@@ -1,7 +1,7 @@
-# import os
-# import sys
-# import datetime
-# import cv2
+import os
+import sys
+import datetime
+import cv2
 # import matplotlib
 
 # # from PIL import Image
@@ -23,20 +23,7 @@
 #     print(image.shape)
 
 
-# if __name__ == "__main__":
-#     print("aaa")
+if __name__ == "__main__":
+    print("aaa")
     # image_path = sys.argv[1]
     # main(image_path)
-
-
-try:
-    # ここにPythonコードを記述
-    # import os
-    # import sys
-    # import datetime
-    import cv2
-    print("aaa")
-except Exception as e:
-    import sys
-    print(f"An error occurred: {str(e)}", file=sys.stderr)
-    sys.exit(1)
