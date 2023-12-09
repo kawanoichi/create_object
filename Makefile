@@ -2,7 +2,7 @@ help:
 	@echo Dockerセットアップ
 	@echo "$$ make docker-setup"
 	
-	@echo Dockerセットアップ
+	@echo 権限を許可する
 	@echo "$$ make permission"
 	
 	@echo Docker起動

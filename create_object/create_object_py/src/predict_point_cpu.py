@@ -10,27 +10,30 @@ import cv2
 import numpy as np
 import torch
 from torch.autograd import Variable
+
 from model import generator
 
-SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
+SCRIPT_DIR_PATH = os.path.dirname(
+    os.path.abspath(__file__))  # create_object_py/src
+PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)  # create_object_py
+DATA_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
 
 class Predict_Point:
     """画像から3Dオブジェクトを生成するクラス."""
 
     def __init__(self,
-                 model_path="modelG_50.pth",
+                 model_path=os.path.join(DATA_DIR_PATH, "modelG_50.pth"),
                  num_points=2048,
-                 save_dir=os.path.join(SCRIPT_DIR_PATH, "predict_points")):
+                 save_dir=DATA_DIR_PATH):
         self.model_path = model_path
         self.num_points = num_points
         self.save_dir = save_dir
-        
-    def predict(self):
+
+    def predict(self, image_name, save_file_name=None):
         """学習済みモデルを使用して画像から点群を生成する."""
         read_img_path = os.path.join(
-            SCRIPT_DIR_PATH, "test_image_airplane.png")
+            DATA_DIR_PATH, image_name)
         if not os.path.exists(read_img_path):
             print("Error: image is not exist")
             print("Search path is ", read_img_path)
@@ -41,9 +44,10 @@ class Predict_Point:
             os.makedirs(self.save_dir)
         except OSError:
             pass
-        
-        save_name = "point_data.npy"
-        pre_save_path = os.path.join(self.save_dir, save_name)
+
+        if save_file_name is None:
+            save_file_name = os.path.splitext(image_name)[0] + ".npy"
+        pre_save_path = os.path.join(self.save_dir, save_file_name)
         print("pre_save_path", pre_save_path)
 
         # 画像読み込み(128, 128, 3)
@@ -71,7 +75,8 @@ class Predict_Point:
 
         # 学習済みモデルの読み込み
         with open(self.model_path, "rb") as f:
-            gen.load_state_dict(torch.load(f, map_location=torch.device('cpu')))
+            gen.load_state_dict(torch.load(
+                f, map_location=torch.device('cpu')))
 
         # torch.Tensorに計算グラフの情報を保持させる
         image = Variable(image.float())
@@ -94,9 +99,13 @@ class Predict_Point:
 if __name__ == "__main__":
     print(f"SCRIPT_DIR_PATH: {SCRIPT_DIR_PATH}")
     print(f"PROJECT_DIR_PATH: {PROJECT_DIR_PATH}")
+
+    # 画像のファイル名
+    image_name = "airplane.png"
+
     # 点群予測クラスのインスタンス化
     pp = Predict_Point()
     # 点群予測関数の実行
-    pp.predict()
+    pp.predict(image_name)
 
     print("終了")
