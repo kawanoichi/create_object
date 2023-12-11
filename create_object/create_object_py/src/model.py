@@ -126,7 +126,12 @@ def resnet50(pretrained=False, **kwargs):
 class generator(nn.Module):
     def __init__(self, num_points=1024, use_gpu=True):
         super(generator, self).__init__()
-        self.resnet50 = resnet50(pretrained=True)
+        try:
+            # self.resnet50 = resnet50(pretrained=True)
+            self.resnet50 = resnet50(pretrained=False)
+        except Exception as e:
+            print(e)
+            print("wget https://download.pytorch.org/models/resnet50-19c8e357.pth を実行してください")
         self.num_points = num_points
         self.zmean = nn.Linear(1000, 100)
         self.zlog = nn.Linear(1000, 100)

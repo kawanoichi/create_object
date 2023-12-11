@@ -17,10 +17,20 @@ def main(image_name):
     pp = Predict_Point()
     pp.predict(image_name, point_file_name)
 
-    # 表面情報の作成
-    ms = MakeSurface(point_file_dir=WORK_DIR_PATH,
-                     point_file_name=point_file_name)
-    ms.main()
+    # try:
+    #     point_file_name = os.path.splitext(image_name)[0] + ".npy"
+    #     pp = Predict_Point()
+    #     pp.predict(image_name, point_file_name)
+    # except Exception as e:
+    #     print(e)
+
+    try:
+        # 表面情報の作成
+        ms = MakeSurface(point_file_dir=WORK_DIR_PATH,
+                        point_file_name=point_file_name)
+        ms.main()
+    except Exception as e:
+        print(e)
 
 
 image_name = sys.argv[1]

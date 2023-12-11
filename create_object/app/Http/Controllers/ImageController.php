@@ -32,16 +32,18 @@ class ImageController extends Controller
         ]);
 
 
+        
         $image = $request->file('image');
         // 画像名を自動的
         // $image->extension() : 拡張子を返す
         $imageName = time().'.'.$image->extension();
         
         // 画像をstorage/app/public/dataディレクトリに保存
-        // $image->storeAs('public/data', $imageName);
+        $image->storeAs('public/data', $imageName);
 
         // パスの作成
-        $executePythonCommand = 'python3 /var/www/html/public/check_library.py';
+        // $executePythonCommand = 'python3 /var/www/html/public/check_library.py';
+        $executePythonCommand = 'python3 /var/www/html/create_object_py/src';
         
         // Pythonスクリプトを呼び出し
         $output = [];
@@ -49,13 +51,16 @@ class ImageController extends Controller
         // exec("$executePythonCommand", $output, $returnCode);
         // exec("{$executePythonCommand} {$this->imageDirPath}/{$imageName}", $output, $returnCode);
         
-        exec("$executePythonCommand", $output, $exitCode);
+        exec("{$executePythonCommand} {$imageName}", $output, $exitCode);
         if ($exitCode !== 0) {
+            // 実行に失敗
             echo "Python script execution failed. Exit code: $exitCode\n";
             echo "Error output:\n" . implode("\n", $output);
         } else {
+            // 成功
+            echo "execute python is success";
             $pythonResult = implode("<br>", $output);
-            return $pythonResult;
+            // return $pythonResult;
         }
 
 
@@ -63,18 +68,21 @@ class ImageController extends Controller
         $imageName = time().'.'.$image->extension();
         $outputFileName = $imageName[-1];
 
-        // return redirect()->route('download', $imageName);
-        return "OK";
+        return redirect()->route('download', $imageName);
+        // return "OK";
     }
     
-    public function download($filename)
+    public function download($imageName)
     {
-        $path = storage_path("app/public/data/{$filename}");
-
+        $extension = pathinfo($imageName, PATHINFO_EXTENSION);
+        // return $extension;
+        $plyFileName = str_replace($extension, 'ply', $imageName);
+        $path = storage_path("app/public/data/{$plyFileName}");
         if (file_exists($path)) {
-            return response()->download($path, $filename);
+            return response()->download($path, $plyFileName);
         } else {
-            return response()->json(['error' => 'File not found.'], 404);
+            echo "File not found\n";
+            return $plyFileName;
         }
     }
 

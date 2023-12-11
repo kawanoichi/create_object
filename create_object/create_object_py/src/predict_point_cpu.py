@@ -87,7 +87,6 @@ class Predict_Point:
 
         np.save(pre_save_path, predict_points)
 
-
 if __name__ == "__main__":
     print(f"SCRIPT_DIR_PATH : {SCRIPT_DIR_PATH}")
     print(f"PROJECT_DIR_PATH: {PROJECT_DIR_PATH}")

@@ -7,8 +7,8 @@
 - laravel
 - python3.10.12
 
-## pythonライブらり
+## pythonライブラリ
 - torch
-- open3d([pythonのバージョンに注意](http://www.open3d.org/docs/release/getting_started.html))
+- open3d ※[pythonのバージョンに注意](http://www.open3d.org/docs/release/getting_started.html)
 - numpy
 etc.
