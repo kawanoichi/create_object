@@ -1,0 +1,39 @@
+FROM php:8.1-apache
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    libzip-dev \
+    unzip \
+    wget \
+    build-essential \
+    zlib1g-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libssl-dev \
+    libreadline-dev \
+    libffi-dev \
+    && docker-php-ext-install zip
+
+# Download and install Python 3.10
+RUN wget https://www.python.org/ftp/python/3.10.0/Python-3.10.12.tar.xz && \
+    tar -xf Python-3.10.12.tar.xz && \
+    cd Python-3.10.0 && \
+    ./configure --enable-optimizations && \
+    make -j$(nproc) && \
+    make install && \
+    cd .. && \
+    rm -rf Python-3.10.12 Python-3.10.12.tar.xz
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Create and activate a virtual environment
+RUN python3.10 -m venv /venv
+ENV PATH="/venv/bin:$PATH"
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filenam

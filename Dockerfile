@@ -7,23 +7,42 @@ WORKDIR /var/www/html
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     unzip \
+    wget \
+    build-essential \
+    zlib1g-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libssl-dev \
+    libreadline-dev \
+    libffi-dev \
     && docker-php-ext-install zip
 
-# Install Python and necessary packages
-RUN apt-get update && \
-    apt-get install -y python3 python3-pip python3-venv &&\
-    apt-get clean
+# Download and install Python 3.10.12
+RUN wget https://www.python.org/ftp/python/3.10.12/Python-3.10.12.tar.xz && \
+    tar -xf Python-3.10.12.tar.xz && \
+    cd Python-3.10.12 && \
+    ./configure --enable-optimizations && \
+    make -j$(nproc) && \
+    make install && \
+    cd .. && \
+    rm -rf Python-3.10.12 Python-3.10.12.tar.xz
 
 # Set working directory
 WORKDIR /var/www/html
 
 # Create and activate a virtual environment
-RUN python3 -m venv /venv
+RUN python3.10 -m venv /venv
 ENV PATH="/venv/bin:$PATH"
 
-# Install opencv-python in the virtual environment
-RUN apt-get install -y libgl1-mesa-glx libglib2.0-dev
-RUN /venv/bin/pip install opencv-python
+# 必要なライブラリをインストール
+RUN apt-get install -y libx11-dev
+RUN apt-get install -y libgl1-mesa-glx
+RUN pip install open3d 
+RUN apt-get install -y libglib2.0-0
+RUN pip install opencv-python
+RUN pip install torch
+
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -40,4 +59,3 @@ EXPOSE 80
 
 # CMD ["php-fpm"]
 CMD ["apache2-foreground"]
-
