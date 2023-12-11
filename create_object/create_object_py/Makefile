@@ -11,20 +11,20 @@ help:
 	@echo "$$ make format"
 
 run:
-	poetry run python3 -m src airplane.png
+	python3 -m src airplane.png
 
 predict:
-	poetry run python3 src/predict_point_cpu.py
+	python3 src/predict_point_cpu.py
 
 surface:
-	poetry run python3 src/create_surface.py
+	python3 src/create_surface.py
 
 permission:	
 	chmod -R 777 *
 	chown -R www-data:www-data * 
 
 format:
-	poetry run python3 -m autopep8 -i -r src/ tests/
+	python3 -m autopep8 -i -r src/ tests/
 
 zikken:
 	python3 src/read_image.py

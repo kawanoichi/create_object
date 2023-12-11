@@ -29,7 +29,7 @@ class Predict_Point:
         self.model_path = model_path
         self.num_points = num_points
 
-    def predict(self, image_name, save_file_name=None):
+    def predict(self, image_name, save_dir_path = WORK_DIR_PATH, save_file_name=None):
         """学習済みモデルを使用して画像から点群を生成する."""
         read_img_path = os.path.join(
             DATA_DIR_PATH, image_name)
@@ -83,9 +83,12 @@ class Predict_Point:
         # 予測座標の保存
         if save_file_name is None:
             save_file_name = os.path.splitext(image_name)[0] + ".npy"
-        pre_save_path = os.path.join(WORK_DIR_PATH, save_file_name)
-
+        pre_save_path = os.path.join(save_dir_path, save_file_name)
         np.save(pre_save_path, predict_points)
+
+        pre_save_path = os.path.join(DATA_DIR_PATH, save_file_name)
+        np.save(pre_save_path, predict_points)
+
 
 if __name__ == "__main__":
     print(f"SCRIPT_DIR_PATH : {SCRIPT_DIR_PATH}")

@@ -33,13 +33,19 @@ class ImageController extends Controller
 
 
         
-        $image = $request->file('image');
+        $image_path = $request->file('image');
         // 画像名を自動的
         // $image->extension() : 拡張子を返す
-        $imageName = time().'.'.$image->extension();
+        $imageName = time().'.'.$image_path->extension();
         
-        // 画像をstorage/app/public/dataディレクトリに保存
-        $image->storeAs('public/data', $imageName);
+        // 画像を "storage/app/public/data" ディレクトリに保存
+        $image_path->storeAs('public/data', $imageName);
+        // $path = 'public/data ' . $imageName;
+        if (file_exists($image_path)) {
+            echo "image is exist\n";
+        } else {
+            echo "{$image_path} is not found\n";
+        }
 
         // パスの作成
         // $executePythonCommand = 'python3 /var/www/html/public/check_library.py';
@@ -55,20 +61,22 @@ class ImageController extends Controller
         if ($exitCode !== 0) {
             // 実行に失敗
             echo "Python script execution failed. Exit code: $exitCode\n";
-            echo "Error output:\n" . implode("\n", $output);
+            $pythonResult = implode("<br>", $output);
+            echo "Error output:\n" . $pythonResult;
+            return $pythonResult;
         } else {
             // 成功
             echo "execute python is success";
             $pythonResult = implode("<br>", $output);
-            // return $pythonResult;
+            return $pythonResult;
         }
 
 
         // 変換後の画像ファイル名
-        $imageName = time().'.'.$image->extension();
+        $imageName = time().'.'.$image_path->extension();
         $outputFileName = $imageName[-1];
 
-        return redirect()->route('download', $imageName);
+        // return redirect()->route('download', $imageName);
         // return "OK";
     }
     

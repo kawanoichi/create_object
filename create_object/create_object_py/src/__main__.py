@@ -12,17 +12,33 @@ DATA_DIR_PATH = "/var/www/html/storage/app/public/data"
 
 
 def main(image_name):
+    success = True
     # 点群予測関数の実行
-    point_file_name = os.path.splitext(image_name)[0] + ".npy"
-    pp = Predict_Point()
-    pp.predict(image_name, point_file_name)
+    # point_file_name = os.path.splitext(image_name)[0] + ".npy"
+    # pp = Predict_Point()
+    # pp.predict(image_name, point_file_name)
 
-    # try:
-    #     point_file_name = os.path.splitext(image_name)[0] + ".npy"
-    #     pp = Predict_Point()
-    #     pp.predict(image_name, point_file_name)
-    # except Exception as e:
-    #     print(e)
+    try:
+        point_file_name = os.path.splitext(image_name)[0] + ".npy"
+        pp = Predict_Point()
+        pp.predict(image_name,
+                   save_dir_path = DATA_DIR_PATH,
+                   save_file_name = point_file_name)
+    except Exception as e:
+        print(e)
+        success = False
+
+    try:
+        npy_file_path = os.path.exists(DATA_DIR_PATH, point_file_name)
+        if npy_file_path:
+            # chmodを実行
+            os.chmod(npy_file_path, 0o777)
+        else:
+            return f"{npy_file_path} is not exist"
+    except Exception as e:
+        print(e)
+        success = False
+
 
     try:
         # 表面情報の作成
@@ -31,7 +47,15 @@ def main(image_name):
         ms.main()
     except Exception as e:
         print(e)
+        success = False
+
+    return success
 
 
 image_name = sys.argv[1]
-main(image_name)
+success = main(image_name)
+
+if success:
+    print(f"Python is success")
+else:
+    print(f"Python is failed")
