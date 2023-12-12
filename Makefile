@@ -36,6 +36,8 @@ docker-stop:
 	docker stop create_object
 
 rm:
+	rm -rf ~/create_object/create_object/create_object_py/data/*.npy
+	rm -rf ~/create_object/create_object/storage/app/public/data/*.npy
 	find ~/create_object/create_object/storage/app/public/data -type f -not -name 'airplane.png' -delete
 
 push:

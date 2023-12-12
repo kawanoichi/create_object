@@ -398,9 +398,13 @@ class MakeSurface:
 
         # 生成したメッシュをPLYファイルに保存
         save_path = os.path.join(DATA_DIR_PATH, self.save_ply_name)
-        print(f"save_path: {save_path}")
         o3d.io.write_triangle_mesh(save_path, recMeshBPA)
 
+        print(f"save_path: {save_path}")
+        if os.path.exists(save_path) is False:
+            raise(f"save fialed {save_path}")
+        
+        return save_path
 
 if __name__ == "__main__":
     import time

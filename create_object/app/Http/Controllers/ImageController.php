@@ -21,6 +21,8 @@ class ImageController extends Controller
     
     public function upload(Request $request)
     {
+        $errorFlag = False;
+        
         // バリデーションするためのメソッド
         // 'required': 画像が必須であることを示します。
         // 'image': 画像であることを確認します。
@@ -30,67 +32,76 @@ class ImageController extends Controller
             // 'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif',
         ]);
-
-
         
         $image_path = $request->file('image');
-        // 画像名を自動的
-        // $image->extension() : 拡張子を返す
+        // 画像名を自動的な名前に変更
         $imageName = time().'.'.$image_path->extension();
         
         // 画像を "storage/app/public/data" ディレクトリに保存
         $image_path->storeAs('public/data', $imageName);
-        // $path = 'public/data ' . $imageName;
+
+        echo " imageName: " . $imageName . "<br>";
+        echo "image_path: " . $image_path . "<br>";
+
+        // 画像アップロード成功確認
         if (file_exists($image_path)) {
-            echo "image is exist\n";
+            echo "upload: success<br>";
         } else {
-            echo "{$image_path} is not found\n";
+            $errorFlag = True;
+            echo "upload: failed<br>";
         }
 
         // パスの作成
-        // $executePythonCommand = 'python3 /var/www/html/public/check_library.py';
         $executePythonCommand = 'python3 /var/www/html/create_object_py/src';
         
-        // Pythonスクリプトを呼び出し
+        // Pythonスクリプトを実行
         $output = [];
         $returnCode = 0;
-        // exec("$executePythonCommand", $output, $returnCode);
-        // exec("{$executePythonCommand} {$this->imageDirPath}/{$imageName}", $output, $returnCode);
-        
         exec("{$executePythonCommand} {$imageName}", $output, $exitCode);
+        
+        echo "python ----------------------------------------------<br>";
         if ($exitCode !== 0) {
             // 実行に失敗
-            echo "Python script execution failed. Exit code: $exitCode\n";
+            $errorFlag = True;
+            echo "Python: failed<br>";
+            echo "Exit code: " . $exitCode . "<br>";
             $pythonResult = implode("<br>", $output);
-            echo "Error output:\n" . $pythonResult;
-            return $pythonResult;
+            echo "Error output:<br>" . $pythonResult;
+            echo $pythonResult;
         } else {
             // 成功
-            echo "execute python is success";
+            echo "Python: success<br>";
             $pythonResult = implode("<br>", $output);
-            return $pythonResult;
+            echo $pythonResult;
         }
+        echo "----------------------------------------------------<br>";
 
 
         // 変換後の画像ファイル名
-        $imageName = time().'.'.$image_path->extension();
+        // $imageName = time().'.'.$image_path->extension();
         $outputFileName = $imageName[-1];
-
-        // return redirect()->route('download', $imageName);
-        // return "OK";
+        if ($errorFlag){
+            return "<br>失敗";
+        }else{
+            return redirect()->route('download', $imageName);
+        }
     }
     
     public function download($imageName)
     {
+        // ※この関数で文字列をechoするとダウンロードできなくなる
+        // echo "imageName: " . $imageName . "<br>";
         $extension = pathinfo($imageName, PATHINFO_EXTENSION);
-        // return $extension;
         $plyFileName = str_replace($extension, 'ply', $imageName);
+        // echo "plyFileName: " . $plyFileName . "<br>";
         $path = storage_path("app/public/data/{$plyFileName}");
         if (file_exists($path)) {
+            // return response()->download($path, $plyFileName);
+            // echo "file is exists<br>";
             return response()->download($path, $plyFileName);
         } else {
-            echo "File not found\n";
-            return $plyFileName;
+            echo "File not found". $path . "<br>";
+            return "download: failed<br>";
         }
     }
 
