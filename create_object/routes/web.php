@@ -26,7 +26,11 @@ Route::get('/home', function () {
 
 
 Route::get('/upload-form', [ImageController::class, 'showForm']);
+
+Route::get('/settings', [SettingsController::class, 'showSettingsForm'])->name('showSettingsForm');
+Route::post('/update-settings', [SettingsController::class, 'updateSettings'])->name('updateSettings');
+
 Route::post('/upload', [ImageController::class, 'upload']);
 Route::get('/download/{imageName}', [ImageController::class, 'download'])->name('download');
 
-Route::get('/home/execute', [ImageController::class, 'testExecutePython']);
+// Route::get('/home/execute', [ImageController::class, 'testExecutePython']);

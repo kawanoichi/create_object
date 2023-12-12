@@ -21,7 +21,28 @@
         
         <br>
         
+
         <!-- カテゴリ選択 -->
+        <fieldset> 
+        <legend>Select a class of object:</legend>
+        <form action="{{ route('updateSettings') }}" method="post">
+            @csrf
+            <input type="radio" name="setting" id="option1" value="option1">
+            <label for="option1">Airplane</label>
+            <br>
+            
+            <input type="radio" name="setting" id="option2" value="option2">
+            <label for="option2">Chair</label>
+            <br>
+            
+            <input type="radio" name="setting" id="option3" value="option3">
+            <label for="option3">Table</label>
+            <br>
+            
+            <button type="submit">保存</button>
+        </form>
+        </fieldset>
+        
         <fieldset>
         <legend>Select a class of object:</legend>
         <div>

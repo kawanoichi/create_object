@@ -13,11 +13,6 @@ DATA_DIR_PATH = "/var/www/html/storage/app/public/data"
 
 def main(image_name):
     success = True
-    # 点群予測関数の実行
-    # point_file_name = os.path.splitext(image_name)[0] + ".npy"
-    # pp = Predict_Point()
-    # pp.predict(image_name, point_file_name)
-
     try:
         point_file_name = os.path.splitext(image_name)[0] + ".npy"
         pp = Predict_Point()

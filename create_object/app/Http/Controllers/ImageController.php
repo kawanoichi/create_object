@@ -19,8 +19,18 @@ class ImageController extends Controller
         return view('upload_form');
     }
     
+    public function updateSettings(Request $request)
+    {
+        $settingValue = $request->input('setting');
+        // ここで$settingValueを使って設定を更新するなどの処理を行う
+        // ...
+
+        return redirect()->route('showSettingsForm')->with('success', '設定が更新されました');
+    }
+
     public function upload(Request $request)
     {
+        $developFlag = False;
         $errorFlag = False;
         
         // バリデーションするためのメソッド
@@ -40,12 +50,16 @@ class ImageController extends Controller
         // 画像を "storage/app/public/data" ディレクトリに保存
         $image_path->storeAs('public/data', $imageName);
 
-        echo " imageName: " . $imageName . "<br>";
-        echo "image_path: " . $image_path . "<br>";
+        if ($developFlag) {
+            echo " imageName: " . $imageName . "<br>";
+            echo "image_path: " . $image_path . "<br>";
+        }
 
         // 画像アップロード成功確認
         if (file_exists($image_path)) {
-            echo "upload: success<br>";
+            if ($developFlag) {
+                echo "upload: success<br>";
+            }
         } else {
             $errorFlag = True;
             echo "upload: failed<br>";
@@ -59,26 +73,29 @@ class ImageController extends Controller
         $returnCode = 0;
         exec("{$executePythonCommand} {$imageName}", $output, $exitCode);
         
-        echo "python ----------------------------------------------<br>";
-        if ($exitCode !== 0) {
-            // 実行に失敗
-            $errorFlag = True;
-            echo "Python: failed<br>";
-            echo "Exit code: " . $exitCode . "<br>";
-            $pythonResult = implode("<br>", $output);
-            echo "Error output:<br>" . $pythonResult;
-            echo $pythonResult;
-        } else {
-            // 成功
-            echo "Python: success<br>";
-            $pythonResult = implode("<br>", $output);
-            echo $pythonResult;
+        if ($developFlag) {
+            echo "python ----------------------------------------------<br>";
+            if ($exitCode !== 0) {
+                // 実行に失敗
+                $errorFlag = True;
+                echo "Python: failed<br>";
+                echo "Exit code: " . $exitCode . "<br>";
+                $pythonResult = implode("<br>", $output);
+                echo "Error output:<br>" . $pythonResult;
+                echo $pythonResult;
+            } else {
+                // 成功
+                $pythonResult = implode("<br>", $output);
+                if ($developFlag) {
+                    echo "Python: success<br>";
+                    echo $pythonResult;
+                }
+            }
+            echo "----------------------------------------------------<br>";
         }
-        echo "----------------------------------------------------<br>";
-
+            
 
         // 変換後の画像ファイル名
-        // $imageName = time().'.'.$image_path->extension();
         $outputFileName = $imageName[-1];
         if ($errorFlag){
             return "<br>失敗";
@@ -90,14 +107,10 @@ class ImageController extends Controller
     public function download($imageName)
     {
         // ※この関数で文字列をechoするとダウンロードできなくなる
-        // echo "imageName: " . $imageName . "<br>";
         $extension = pathinfo($imageName, PATHINFO_EXTENSION);
         $plyFileName = str_replace($extension, 'ply', $imageName);
-        // echo "plyFileName: " . $plyFileName . "<br>";
         $path = storage_path("app/public/data/{$plyFileName}");
         if (file_exists($path)) {
-            // return response()->download($path, $plyFileName);
-            // echo "file is exists<br>";
             return response()->download($path, $plyFileName);
         } else {
             echo "File not found". $path . "<br>";
