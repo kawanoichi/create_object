@@ -19,7 +19,6 @@ def main(image_name):
     npy_dir_path = DATA_DIR_PATH
     ply_dir_path = DATA_DIR_PATH
 
-
     # 画像から点群データ(npy)を作成
     try:
         pp = Predict_Point(img_dir_path=input_img_dir_path,
@@ -68,7 +67,8 @@ def main(image_name):
 
     return success
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     print("### python ###")
     image_name = sys.argv[1]
     object_category = sys.argv[2]
