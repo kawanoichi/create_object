@@ -13,31 +13,47 @@ from torch.autograd import Variable
 
 from model import generator
 
-SCRIPT_DIR_PATH = os.path.dirname(
-    os.path.abspath(__file__))  # create_object_py/src
-PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)  # create_object_py
-WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
-DATA_DIR_PATH = "/var/www/html/storage/app/public/data"
-
 
 class Predict_Point:
     """画像から3Dオブジェクトを生成するクラス."""
 
     def __init__(self,
-                 model_path=os.path.join(WORK_DIR_PATH, "modelG_50.pth"),
-                 num_points=2048):
+                 img_dir_path: str,
+                 model_path: str,
+                 point_save_dir_path: str,
+                 num_points: int = 2048):
+
+        self.img_dir_path = img_dir_path
         self.model_path = model_path
+        self.point_save_dir_path = point_save_dir_path
         self.num_points = num_points
 
-    def predict(self, image_name, save_dir_path = WORK_DIR_PATH, save_file_name=None):
-        """学習済みモデルを使用して画像から点群を生成する."""
-        read_img_path = os.path.join(
-            DATA_DIR_PATH, image_name)
-        if not os.path.exists(read_img_path):
-            print("Error: image is not exist")
-            print("Search path is ", read_img_path)
-            exit()
+        self.check_exist(self.img_dir_path)
+        self.check_exist(self.model_path)
+        self.check_exist(self.point_save_dir_path)
 
+    @staticmethod
+    def check_exist(path):
+        """ファイル, ディレクトリの存在確認を行う関数."""
+        if not os.path.exists(path):
+            raise Exception(f"Error :Not exist '{path}'")
+
+    def predict(self, image_name):
+        """学習済みモデルを使用して画像から点群を生成する."""
+        """
+        pathの設定
+        """
+        # 入力画像(pngファイル)
+        read_img_path = os.path.join(self.img_dir_path, image_name)
+        self.check_exist(read_img_path)
+
+        # 点群データ保存先(npyファイル)
+        save_file_name = os.path.splitext(image_name)[0] + ".npy"
+        save_path = os.path.join(self.point_save_dir_path, save_file_name)
+
+        """
+        メイン処理
+        """
         # 画像読み込み(128, 128, 3)
         image = cv2.imread(read_img_path)
         image = cv2.resize(image, (128, 128))
@@ -81,30 +97,27 @@ class Predict_Point:
         predict_points = np.transpose(points, (1, 0))
 
         # 予測座標の保存
-        if save_file_name is None:
-            save_file_name = os.path.splitext(image_name)[0] + ".npy"
-        pre_save_path = os.path.join(save_dir_path, save_file_name)
-        np.save(pre_save_path, predict_points)
-
-        pre_save_path = os.path.join(DATA_DIR_PATH, save_file_name)
-        np.save(pre_save_path, predict_points)
+        np.save(save_path, predict_points)
 
 
 if __name__ == "__main__":
+
+    SCRIPT_DIR_PATH = os.path.dirname(
+        os.path.abspath(__file__))  # create_object_py/src
+    PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)  # create_object_py
+    WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+
     print(f"SCRIPT_DIR_PATH : {SCRIPT_DIR_PATH}")
     print(f"PROJECT_DIR_PATH: {PROJECT_DIR_PATH}")
     print(f"WORK_DIR_PATH   : {WORK_DIR_PATH}")
-    print(f"DATA_DIR_PATH   : {DATA_DIR_PATH}")
 
     # 画像のファイル名
     image_name = "airplane.png"
 
     # 点群予測クラスのインスタンス化
-    pp = Predict_Point()
-    # 点群予測関数の実行
-    try:
-        pp.predict(image_name)
-    except Exception as e:
-        print(f"ERROR: {e}")
+    pp = Predict_Point(img_dir_path=WORK_DIR_PATH,
+                       model_path=os.path.join(WORK_DIR_PATH, "modelG_50.pth"),
+                       point_save_dir_path=WORK_DIR_PATH)
+    pp.predict(image_name)
 
     print("終了")

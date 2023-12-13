@@ -131,7 +131,8 @@ class generator(nn.Module):
             self.resnet50 = resnet50(pretrained=False)
         except Exception as e:
             print(e)
-            print("wget https://download.pytorch.org/models/resnet50-19c8e357.pth を実行してください")
+            print(
+                "wget https://download.pytorch.org/models/resnet50-19c8e357.pth を実行してください")
         self.num_points = num_points
         self.zmean = nn.Linear(1000, 100)
         self.zlog = nn.Linear(1000, 100)

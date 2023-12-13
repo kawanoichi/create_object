@@ -14,10 +14,10 @@ run:
 	python3 -m src airplane.png
 
 predict:
-	python3 src/predict_point_cpu.py
+	poetry run python3 src/predict_point_cpu.py
 
 surface:
-	python3 src/create_surface.py
+	poetry run python3 src/create_surface.py
 
 permission:	
 	chmod -R 777 *
@@ -31,3 +31,7 @@ zikken:
 
 env_pip:
 	bash create_env.sh
+
+make rm:
+	rm -rf data/*.npy
+	rm -rf data/*.ply

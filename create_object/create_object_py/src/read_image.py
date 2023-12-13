@@ -25,8 +25,8 @@
 
 # if __name__ == "__main__":
 #     print("aaa")
-    # image_path = sys.argv[1]
-    # main(image_path)
+# image_path = sys.argv[1]
+# main(image_path)
 
 
 try:

@@ -8,9 +8,11 @@ plyファイルからmeshを生成する.
 実行コマンド
 $ make surface_run
 """
+from edit_mesh_table import EditMeshTable
+from edit_mesh_airplane import EditMeshAirplane
 from image_processing import ImageProcessing as ImaP
 import rotate_coordinate as rotate
-from create_surface_param import Param
+from src.param_create_surface import Param
 
 import cv2
 import open3d as o3d
@@ -24,24 +26,25 @@ import matplotlib
 matplotlib.use('Agg')
 # from sklearn.linear_model import RANSACRegressor
 
-SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
-WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
-DATA_DIR_PATH = "/var/www/html/storage/app/public/data"
-
 
 class MakeSurface:
     """点群から表面を作りplyファイルに保存するクラス."""
 
-    def __init__(self, point_file_dir, point_file_name) -> None:
+    def __init__(self,
+                 point_dir,
+                 ply_save_dir) -> None:
         """コンストラクタ.
 
         Args:
             point_file (str): 点群ファイル(.npy)
         """
-        self.point_file_dir = point_file_dir
-        self.point_file_name = point_file_name
-        self.save_ply_name = os.path.splitext(point_file_name)[0] + ".ply"
+        # Path
+        self.point_dir = point_dir
+        self.ply_save_dir = ply_save_dir
+
+        self.check_exist(self.point_dir)
+        self.check_exist(self.ply_save_dir)
+
         self.groupe = None
 
         # 表示する点群(散布図)に関する変数
@@ -65,6 +68,12 @@ class MakeSurface:
         x1_vector = np.array([1, 0, 0])
         self.x1_vector_index = np.where(
             np.all(self.vectors_26 == x1_vector, axis=1))
+
+    @staticmethod
+    def check_exist(path):
+        """ファイル, ディレクトリの存在確認を行う関数."""
+        if not os.path.exists(path):
+            raise Exception(f"Error :Not exist '{path}'")
 
     def vector_26(self):
         """26方位ベクトル作成関数."""
@@ -289,8 +298,8 @@ class MakeSurface:
             print("Error: 線が見つかりません")
             return normals
 
-        save_path = os.path.join(DATA_DIR_PATH, 'zikken3.png')
-        cv2.imwrite(save_path, img)
+        # save_path = os.path.join(DATA_DIR_PATH, 'zikken3.png')
+        # cv2.imwrite(save_path, img)
 
         """
         点群の割り当て
@@ -315,15 +324,23 @@ class MakeSurface:
 
         return normals
 
-    def main(self) -> None:
+    def main(self, point_file_name) -> None:
         """点群をメッシュ化し、表示する関数."""
-        # 点群データの読み込み
-        point_path = os.path.join(self.point_file_dir, self.point_file_name)
 
-        # 画像の存在チェック
-        if not os.path.isfile(point_path):
-            raise FileNotFoundError("No file '%s'" % point_path)
+        """
+        パス設定
+        """
+        # 入力点群パス
+        point_path = os.path.join(self.point_dir, point_file_name)
+        self.check_exist(point_path)
 
+        # 保存PLYパス
+        ply_file_name = os.path.splitext(point_file_name)[0] + ".ply"
+        save_ply_path = os.path.join(self.ply_save_dir, ply_file_name)
+
+        """
+        メイン処理
+        """
         # 点群データの読み込み
         points = np.load(point_path)
 
@@ -362,9 +379,7 @@ class MakeSurface:
             save_path = os.path.join(WORK_DIR_PATH, 'result.png')
             plt.savefig(save_path)
 
-        """
-        mesh
-        """
+        """mesh作成"""
         # 新しい法線ベクトルの代入
         point_cloud.normals = o3d.utility.Vector3dVector(normals)
 
@@ -397,23 +412,23 @@ class MakeSurface:
             o3d.visualization.draw_geometries([recMeshBPA])
 
         # 生成したメッシュをPLYファイルに保存
-        save_path = os.path.join(DATA_DIR_PATH, self.save_ply_name)
-        o3d.io.write_triangle_mesh(save_path, recMeshBPA)
+        o3d.io.write_triangle_mesh(save_ply_path, recMeshBPA)
 
-        print(f"save_path: {save_path}")
-        if os.path.exists(save_path) is False:
-            raise(f"save fialed {save_path}")
-        
         return save_path
+
 
 if __name__ == "__main__":
     import time
     start = time.time()
 
+    SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
+    PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
+    WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+
     massages = []
     massages.append(f"SCRIPT_DIR_PATH  : {SCRIPT_DIR_PATH}")
     massages.append(f"PROJECT_DIR_PATH : {PROJECT_DIR_PATH}")
-    massages.append(f"PLY_DIR_PATH     : {DATA_DIR_PATH}")
+    massages.append(f"WORK_DIR_PATH    : {WORK_DIR_PATH}")
 
     max_length = max(len(massage) for massage in massages)
     line = "_" * max_length
@@ -426,9 +441,10 @@ if __name__ == "__main__":
 
     file_name = "airplane.npy"
 
-    ms = MakeSurface(point_file_dir=WORK_DIR_PATH,
-                     point_file_name=file_name)
-    ms.main()
+    ms = MakeSurface(point_dir=WORK_DIR_PATH,
+                     ply_save_dir=WORK_DIR_PATH)
+
+    ms.main(file_name)
 
     # 処理時間計測用
     execute_time = time.time() - start
