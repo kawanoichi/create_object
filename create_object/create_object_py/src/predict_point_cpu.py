@@ -102,6 +102,9 @@ if __name__ == "__main__":
     # 点群予測クラスのインスタンス化
     pp = Predict_Point()
     # 点群予測関数の実行
-    pp.predict(image_name)
+    try:
+        pp.predict(image_name)
+    except Exception as e:
+        print(f"ERROR: {e}")
 
     print("終了")

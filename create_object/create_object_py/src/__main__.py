@@ -61,6 +61,7 @@ def main(image_name):
 
 print("### python ###")
 image_name = sys.argv[1]
+object_category = sys.argv[2]
 success = main(image_name)
 
 if success:
@@ -68,4 +69,5 @@ if success:
 else:
     print(f"Python is failed")
 
+print(f"object_category is {object_category}")
 print("###########")

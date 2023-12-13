@@ -6,33 +6,36 @@ use Illuminate\Support\Facades\Storage;
 
 class ImageController extends Controller
 {
-    protected $imageDirPath;
-
-    public function __construct()
-    {
-        // コンストラクタで初期化
-        $this->imageDirPath = '/var/www/html/storage/app/public/image_data';
-    }
-
     public function showForm()
     {
         return view('upload_form');
     }
-    
-    public function updateSettings(Request $request)
-    {
-        $settingValue = $request->input('setting');
-        // ここで$settingValueを使って設定を更新するなどの処理を行う
-        // ...
 
-        return redirect()->route('showSettingsForm')->with('success', '設定が更新されました');
+    public function upload2(Request $request)
+    {
+    if ($request->has('selectCategory')) {
+        $selectedOption = $request->input('selectCategory');
+        echo "ラジオボンタン選択肢:" . $selectedOption . "<br>";
+    } else {
+        echo "失敗";
+    }
+    return;
     }
 
     public function upload(Request $request)
     {
+        $developFlag = True;
         $developFlag = False;
         $errorFlag = False;
-        
+
+        // カテゴリの受付
+        if ($request->has('selectCategory')) {
+            $selectedOption = $request->input('selectCategory');
+            echo "ラジオボンタン選択肢:" . $selectedOption . "<br>";
+        } else {
+            return "カテゴリーを選択して下さい<br>";
+        }
+    
         // バリデーションするためのメソッド
         // 'required': 画像が必須であることを示します。
         // 'image': 画像であることを確認します。
@@ -71,14 +74,14 @@ class ImageController extends Controller
         // Pythonスクリプトを実行
         $output = [];
         $returnCode = 0;
-        exec("{$executePythonCommand} {$imageName}", $output, $exitCode);
+        exec("{$executePythonCommand} {$imageName} {$selectedOption}", $output, $exitCode);
         
         if ($developFlag) {
             echo "python ----------------------------------------------<br>";
             if ($exitCode !== 0) {
                 // 実行に失敗
                 $errorFlag = True;
-                echo "Python: failed<br>";
+                echo "Python execute: failed<br>";
                 echo "Exit code: " . $exitCode . "<br>";
                 $pythonResult = implode("<br>", $output);
                 echo "Error output:<br>" . $pythonResult;
@@ -87,7 +90,7 @@ class ImageController extends Controller
                 // 成功
                 $pythonResult = implode("<br>", $output);
                 if ($developFlag) {
-                    echo "Python: success<br>";
+                    echo "Python execute: success<br>";
                     echo $pythonResult;
                 }
             }
@@ -121,12 +124,13 @@ class ImageController extends Controller
     public function testExecutePython()
     {
         // Pythonスクリプトを実行するコマンド
-        $output = [];
-        $returnCode = 0;
-        exec('python3 /var/www/html/src/test.py', $output, $returnCode);
+        // $output = [];
+        // $returnCode = 0;
+        // exec('python3 /var/www/html/src/test.py', $output, $returnCode);
 
-        $pythonResult = implode("<br>", $output);
-        return $pythonResult;
+        // $pythonResult = implode("<br>", $output);
+        // return $pythonResult;
+        return "実験";
     }
 
 
