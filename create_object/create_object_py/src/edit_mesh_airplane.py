@@ -3,9 +3,9 @@ import open3d as o3d
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import matplotlib
+# import matplotlib
 
-from image_processing import ImageProcessing as ImaP
+# from image_processing import ImageProcessing as ImaP
 
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +16,13 @@ WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 class EditMeshAirplane:
     def __init__(self, vectors_26):
         self.vectors_26 = vectors_26
+        
+        # オブジェクトの正面方向
+        self.front_vector = np.array([0,0,-1]) 
+        # オブジェクトの上方向
+        self.upper_vector = np.array([0,0,-1]) 
+        # オブジェクトの下方向
+        self.lower_vector = np.array([0,0,-1]) 
 
     def angle_between_vectors(self, vector_a, vector_b):
         """ベクトル間のなす角を求める関数.
@@ -40,7 +47,40 @@ class EditMeshAirplane:
         # 弧度法から度数法に変換
         return np.degrees(theta_rad)
 
+    def edit_normals2(self, points: np.ndarray, normals: np.ndarray) -> None:
+    # def edit_normals(self, points: np.ndarray, normals: np.ndarray) -> None:
+        """法線ベクトルに関連する関数.
+
+        Args:
+            points(np.ndarray): 点群
+
+        Variable:
+            self.groupe:
+                点群の座標のインデックスに関連して、
+                26ベクトルの一番近いベクトルのインデックスを格納
+        """
+        theta_thre = 50
+        groupe_upper = points[np.where(
+            self.angle_between_vectors(normals, self.upper_vector) < theta_thre)]
+        print(f"groupe_upper.shape: {groupe_upper.shape}")
+        
+        groupe_lower = points[np.where(
+            self.angle_between_vectors(normals, self.lower_vector) < theta_thre)]
+        print(f"groupe_lower.shape: {groupe_lower.shape}")
+        
+        grope_wings_points = points[np.where(
+            (self.angle_between_vectors(normals, self.upper_vector) < theta_thre) | \
+            (self.angle_between_vectors(normals, self.lower_vector) < theta_thre)
+            )]
+        
+        print(f"grope_wings_points.shape: {grope_wings_points.shape}")
+        
+
+        return normals, grope_wings_points, None
+    
+    
     def edit_normals(self, points: np.ndarray, normals: np.ndarray) -> None:
+    # def edit_normals2(self, points: np.ndarray, normals: np.ndarray) -> None:
         """法線ベクトルに関連する関数.
 
         Args:
@@ -99,8 +139,9 @@ class EditMeshAirplane:
         lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=140)
 
         if lines is not None:
-            for rho, theta in lines.squeeze(axis=1):
-                ImaP.draw_line(img, theta, rho)
+            pass
+            # for rho, theta in lines.squeeze(axis=1):
+            #     ImaP.draw_line(img, theta, rho)
         else:
             print("Error: 線が見つかりません")
             return normals, max_grope_points, None
@@ -133,8 +174,8 @@ class EditMeshAirplane:
 
         if new_line is not None:
             new_line = new_line.reshape(new_line.shape[0], 1, 2)
-            for rho, theta in new_line.squeeze(axis=1):
-                ImaP.draw_line(img, theta, rho)
+            # for rho, theta in new_line.squeeze(axis=1):
+            #     ImaP.draw_line(img, theta, rho)
         else:
             print("Error: 線が見つかりません")
             return normals, max_grope_points, None
@@ -162,3 +203,5 @@ class EditMeshAirplane:
         classed_points = classed_points[1:]
 
         return normals, max_grope_points, classed_points
+
+
