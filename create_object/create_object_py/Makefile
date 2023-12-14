@@ -33,5 +33,4 @@ env_pip:
 	bash create_env.sh
 
 make rm:
-	rm -rf data/*.npy
-	rm -rf data/*.ply
+	find data/ -maxdepth 1 -type f \( -not -name 'airplane.png' -and -not -name '*.npy' -and -not -name '*.pth' \) -delete

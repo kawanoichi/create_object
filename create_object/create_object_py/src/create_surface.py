@@ -11,7 +11,7 @@ $ make surface_run
 from edit_mesh_table import EditMeshTable
 from edit_mesh_airplane import EditMeshAirplane
 # from image_processing import ImageProcessing as ImaP
-import rotate_coordinate as rotate
+# import rotate_coordinate as rotate
 from param_create_surface import Param
 
 import cv2
@@ -94,7 +94,10 @@ class MakeSurface:
 
     def show_point(self, points, title="None") -> None:
         """点群を表示する関数.
-
+        NOTE: 表示する軸方向をopen3dと統一
+            x: 右方向
+            y: 上
+            z: 手前
         Args:
             points(np.ndarray): 点群
         """
@@ -109,11 +112,11 @@ class MakeSurface:
         self.graph_num += 1
 
         plt.title(title)
-        ax.set(xlabel='x', ylabel='y', zlabel='z')
 
+        ax.set(xlabel='x', ylabel='z', zlabel='y')
         ax.scatter(points[:, 0],
-                   points[:, 1],
                    points[:, 2],
+                   points[:, 1],
                    c='b')
 
     def show_point_2D(self, points, title="None") -> None:
@@ -161,6 +164,35 @@ class MakeSurface:
                 ax.quiver(points[i, 0], points[i, 1], points[i, 2],
                           normals[i, 0]*scale, normals[i, 1]*scale, normals[i, 2]*scale, color='r', length=1.0, normalize=True)
 
+    def rotate_object(self, points, angle, axis="x"):
+        """点群を回転させる関数.
+        回転は右手座標系に依存.
+        Args:
+            points: 入力点群
+            angle : 回転させる角度
+            axis  : 回転の軸 ('x' or 'y' or 'z')
+        Return:
+            回転させた点群座標
+        """
+        theta = np.radians(angle)
+        if axis == "x":
+            rotation_matrix = np.array([[1, 0, 0],
+                                        [0, np.cos(theta), -np.sin(theta)],
+                                        [0, np.sin(theta), np.cos(theta)]])
+        if axis == "y":
+            rotation_matrix = np.array([[np.cos(theta), 0, np.sin(theta)],
+                                        [0, 1, 0],
+                                        [-np.sin(theta), 0, np.cos(theta)]])
+        if axis == "z":
+            rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
+                                        [np.sin(theta), np.cos(theta), 0],
+                                        [0, 0, 1]])
+        else:
+            print("座標を指定してください")
+            raise Exception
+        # 座標データに回転行列を適用
+        return np.dot(points, rotation_matrix.T)
+
     def main(self, point_file_name, category=0) -> None:
         """点群をメッシュ化し、表示する関数."""
 
@@ -181,17 +213,16 @@ class MakeSurface:
         # 点群データの読み込み
         points = np.load(point_path)
 
+        print(f"points.shape: {points.shape}")
+
         # グラフの追加
         self.show_point(points, title="Input Point")
 
-        # 飛行機の向きを調整
-        points2 = points.copy()
-        for i, point in enumerate(points2):
-            points2[i] = rotate.rotate_around_x_axis(point, 90, reverse=False)
-            points2[i] = rotate.rotate_around_y_axis(point, 90, reverse=False)
+        # オブジェクトの向きを調整
+        points = self.rotate_object(points, angle=-90, axis="z")
 
         # グラフに追加
-        # self.show_point(points2, title="Rotated Input Point")
+        self.show_point(points, title="Rotated Input Point")
 
         # NumPyの配列からPointCloudを作成
         point_cloud = o3d.geometry.PointCloud()
@@ -208,16 +239,16 @@ class MakeSurface:
 
         """法線ベクトルの作成・編集 (Airplane)"""
         if category == 0 and Param.edit_normal:
-            airplane = EditMeshAirplane(vectors_26=self.vectors_26 )
+            airplane = EditMeshAirplane(vectors_26=self.vectors_26)
             normals, max_grope_points, classed_points = \
                 airplane.edit_normals(points, normals)
             self.show_point_2D(max_grope_points, title="2D")
             if classed_points is not None:
                 self.show_point(classed_points, title="Part of wing")
-        
+
         """法線ベクトルの作成・編集 (Table)"""
         if category == 1 and Param.edit_normal:
-            table = EditMeshTable(vectors_26=self.vectors_26 )
+            table = EditMeshTable(vectors_26=self.vectors_26)
             normals = table.edit_normals(points, normals)
 
         # 編集後の法線ベクトルを表示
@@ -259,6 +290,9 @@ class MakeSurface:
 
         # geometry.Geometry オブジェクトのリストを描画する関数(meshの表示)
         if Param.show_mesh:
+            # x: 右方向
+            # y: 上
+            # z: 手前
             o3d.visualization.draw_geometries([recMeshBPA])
 
         # 生成したメッシュをPLYファイルに保存
@@ -289,7 +323,8 @@ if __name__ == "__main__":
         print(massage)
     print(line)
 
-    file_name = "airplane.npy"
+    # file_name = "airplane.npy"
+    file_name = "two_wings_1.npy"
 
     ms = MakeSurface(point_dir=WORK_DIR_PATH,
                      ply_save_dir=WORK_DIR_PATH)

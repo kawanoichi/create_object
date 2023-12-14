@@ -40,7 +40,6 @@ class EditMeshAirplane:
         # 弧度法から度数法に変換
         return np.degrees(theta_rad)
 
-
     def edit_normals(self, points: np.ndarray, normals: np.ndarray) -> None:
         """法線ベクトルに関連する関数.
 
@@ -97,7 +96,7 @@ class EditMeshAirplane:
 
         # ハフ変換
         # NOTE: rho, theta = line
-        lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=240)
+        lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=140)
 
         if lines is not None:
             for rho, theta in lines.squeeze(axis=1):
@@ -113,7 +112,10 @@ class EditMeshAirplane:
         重複している線を削除
         """
         # lineを並び替え
-        lines_reshape = lines.reshape(5, 2)
+        # print("lines\n", lines[0, 0])
+
+        print(f"lines.shape: {lines.shape}")
+        lines_reshape = lines.reshape(lines.shape[0], lines.shape[2])
         new_line = lines_reshape[np.argsort(lines_reshape[:, 0])]
 
         pre_rho = 0
