@@ -243,10 +243,9 @@ class MakeSurface:
                 airplane.edit_normals(points, normals)
             if classed_points is not None:
                 self.show_point_2D(max_grope_points, title="2D")
-            
+
             if classed_points is not None:
                 self.show_point(classed_points, title="Part of wing")
-
 
         """法線ベクトルの作成・編集 (Table)"""
         if category == 1 and Param.edit_normal:
@@ -259,8 +258,8 @@ class MakeSurface:
         # 点群や法線ベクトルの表示
         if Param.work_process:
             plt.show()
-            save_path = os.path.join(WORK_DIR_PATH, 'result.png')
-            plt.savefig(save_path)
+            # save_path = os.path.join(WORK_DIR_PATH, 'result.png')
+            # plt.savefig(save_path)
 
         """mesh作成"""
         # 新しい法線ベクトルの代入
