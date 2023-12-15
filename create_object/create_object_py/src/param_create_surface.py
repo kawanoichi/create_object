@@ -7,6 +7,7 @@ class Param:
     """
     edit_normal = False
     work_process = False
+    output_image = False
     show_normal = False
     show_mesh = False
 
@@ -18,9 +19,10 @@ class Param:
 
     # 作業過程のグラフの表示
     work_process = True
+    output_image = True
 
     # 法線ベクトルの表示
     # show_normal = True
 
     # meshの表示
-    # show_mesh = True
+    show_mesh = True

@@ -20,9 +20,12 @@ import numpy as np
 import os
 import matplotlib
 # 最初は以下を実行する
-# $ sudo apt-get install python3-tk
-matplotlib.use('TKAgg')
-# matplotlib.use('Agg')
+
+if Param.output_image:
+    matplotlib.use('Agg')
+else:
+    # $ sudo apt-get install python3-tk
+    matplotlib.use('TKAgg')
 # from sklearn.linear_model import RANSACRegressor
 
 
@@ -239,27 +242,29 @@ class MakeSurface:
         """法線ベクトルの作成・編集 (Airplane)"""
         if category == 0 and Param.edit_normal:
             airplane = EditMeshAirplane(vectors_26=self.vectors_26)
-            normals, max_grope_points, classed_points = \
+            edited_normals, wing_points = \
                 airplane.edit_normals(points, normals)
-            if classed_points is not None:
-                self.show_point_2D(max_grope_points, title="2D")
+            if edited_normals is not None:
+                normals = edited_normals
+            if wing_points is not None:
+                self.show_point_2D(wing_points, title="2D")
 
-            if classed_points is not None:
-                self.show_point(classed_points, title="Part of wing")
 
         """法線ベクトルの作成・編集 (Table)"""
-        if category == 1 and Param.edit_normal:
-            table = EditMeshTable(vectors_26=self.vectors_26)
-            normals = table.edit_normals(points, normals)
+        # if category == 1 and Param.edit_normal:
+        #     table = EditMeshTable(vectors_26=self.vectors_26)
+        #     normals = table.edit_normals(points, normals)
 
         # 編集後の法線ベクトルを表示
         self.show_normals(points, normals, title="After Normals")
 
         # 点群や法線ベクトルの表示
         if Param.work_process:
-            plt.show()
-            # save_path = os.path.join(WORK_DIR_PATH, 'result.png')
-            # plt.savefig(save_path)
+            if Param.output_image:
+                save_path = os.path.join(WORK_DIR_PATH, 'result.png')
+                plt.savefig(save_path)
+            else:
+                plt.show()
 
         """mesh作成"""
         # 新しい法線ベクトルの代入
@@ -319,18 +324,24 @@ if __name__ == "__main__":
     line = "_" * max_length
 
     # 設定の出力
-    print(line)
-    for massage in massages:
-        print(massage)
-    print(line)
+    # print(line)
+    # for massage in massages:
+    #     print(massage)
+    # print(line)
 
-    # file_name = "airplane.npy"
-    file_name = "two_wings_1.npy"
+    # image_name = "airplane.npy"
+    image_name = "two_wings_1.npy"
+    image_name = "two_wings_2.npy"
+    image_name = "fighter.npy"
+    image_name = "jet.npy"
+    # image_name = "plane.npy"
+
+
 
     ms = MakeSurface(point_dir=WORK_DIR_PATH,
                      ply_save_dir=WORK_DIR_PATH)
 
-    ms.main(file_name)
+    ms.main(image_name)
 
     # 処理時間計測用
     execute_time = time.time() - start

@@ -113,6 +113,10 @@ if __name__ == "__main__":
 
     # 画像のファイル名
     image_name = "two_wings_1.png"
+    image_name = "two_wings_2.png"
+    image_name = "fighter.png"
+    image_name = "jet.png"
+    image_name = "plane.png"
 
     # 点群予測クラスのインスタンス化
     pp = Predict_Point(img_dir_path=os.path.join(WORK_DIR_PATH, "input_image", "airplane"),

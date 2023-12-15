@@ -1,9 +1,12 @@
+import os
+import warnings
 import cv2
 import open3d as o3d
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 # import matplotlib
+
+from param_create_surface import Param
 
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -18,9 +21,14 @@ class EditMeshAirplane:
         # オブジェクトの正面方向
         self.front_vector = np.array([0, 0, -1])
         # オブジェクトの上方向
-        self.upper_vector = np.array([0, 0, -1])
+        self.upper_vector = np.array([0, 1, 0])
+        self.upper_vector_index = np.where(
+            (self.vectors_26 == self.upper_vector).all(axis=1))[0]
+
         # オブジェクトの下方向
-        self.lower_vector = np.array([0, 0, -1])
+        self.lower_vector = np.array([0, -1, 0])
+        self.lower_vector_index = np.where(
+            (self.vectors_26 == self.lower_vector).all(axis=1))[0]
 
     @staticmethod
     def draw_line(img, theta, rho):
@@ -39,7 +47,8 @@ class EditMeshAirplane:
 
         cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-    def angle_between_vectors(self, vector_a, vector_b):
+    @staticmethod
+    def angle_between_vectors(vector_a, vector_b):
         """ベクトル間のなす角を求める関数.
 
         ベクトルAとベクトルBのなす角を求める.
@@ -62,71 +71,15 @@ class EditMeshAirplane:
         # 弧度法から度数法に変換
         return np.degrees(theta_rad)
 
-    def edit_normals2(self, points: np.ndarray, normals: np.ndarray) -> None:
-        # def edit_normals(self, points: np.ndarray, normals: np.ndarray) -> None:
-        """法線ベクトルに関連する関数.
+    @staticmethod
+    def rho_theta_to_line(rho, theta):
+        """rho, thetaから傾きと切片を求める関数"""
+        a = -np.cos(theta) / np.sin(theta)
+        b = rho / np.sin(theta)
+        return a, b
 
-        Args:
-            points(np.ndarray): 点群
-
-        Variable:
-            self.groupe:
-                点群の座標のインデックスに関連して、
-                26ベクトルの一番近いベクトルのインデックスを格納
-        """
-        theta_thre = 50
-        groupe_upper = points[np.where(
-            self.angle_between_vectors(normals, self.upper_vector) < theta_thre)]
-        print(f"groupe_upper.shape: {groupe_upper.shape}")
-
-        groupe_lower = points[np.where(
-            self.angle_between_vectors(normals, self.lower_vector) < theta_thre)]
-        print(f"groupe_lower.shape: {groupe_lower.shape}")
-
-        grope_wings_points = points[np.where(
-            (self.angle_between_vectors(normals, self.upper_vector) < theta_thre) |
-            (self.angle_between_vectors(normals, self.lower_vector) < theta_thre)
-        )]
-
-        print(f"grope_wings_points.shape: {grope_wings_points.shape}")
-
-        return normals, grope_wings_points, None
-
-    def edit_normals3(self, points: np.ndarray, normals: np.ndarray) -> None:
-        # def edit_normals2(self, points: np.ndarray, normals: np.ndarray) -> None:
-        """法線ベクトルに関連する関数.
-
-        Args:
-            points(np.ndarray): 点群
-
-        Variable:
-            self.groupe:
-                点群の座標のインデックスに関連して、
-                26ベクトルの一番近いベクトルのインデックスを格納
-        """
-        # 点群を法線の向きでグループ分け
-        # 似た方角を向いたベクトルをグループ分け
-        self.groupe = np.zeros(normals.shape[0])
-        for i, normal in enumerate(normals):
-            min_theta = 180  # 比較するためのなす角
-            for j, vector26 in enumerate(self.vectors_26):
-                angle = int(self.angle_between_vectors(normal, vector26))
-                if angle < min_theta:
-                    self.groupe[i] = j
-                    min_theta = angle
-
-        # count_vector_classの作成
-        # グループ分けされたベクトルの個数をカウントする
-        self.count_vector_class = np.zeros(26)
-        for i in range(self.vectors_26.shape[0]):
-            self.count_vector_class[i] = \
-                np.count_nonzero(self.groupe == i)
-        print(f"self.count_vector_class:\n {self.count_vector_class}")
-
-        # 最も多い要素を含むグループの点をグラフに追加
-        vector_index = np.argmax(self.count_vector_class)
-        max_grope_points = points[np.where(self.groupe == vector_index)]
-
+    def detect_wing(self, max_grope_points, normals):
+        """Hough変換による羽を検知."""
         """
         ハフ変換
         """
@@ -141,81 +94,74 @@ class EditMeshAirplane:
             cv2.circle(img, (x, y), 2, 0, -1)
 
         point_img = img.copy()
-        # save_path = os.path.join(DATA_DIR_PATH, 'zikken.png')
-        # cv2.imwrite(save_path, point_img)
+        if Param.work_process:
+            cv2.imwrite(os.path.join(WORK_DIR_PATH, 'zikken.png'), point_img)
 
         # エッジ検出
         edges = cv2.Canny(img, 50, 150)
 
         # ハフ変換
         # NOTE: rho, theta = line
-        lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=140)
+        lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=210)
 
         if lines is not None:
-            # pass
             for rho, theta in lines.squeeze(axis=1):
                 self.draw_line(img, theta, rho)
         else:
             print("Error: 線が見つかりません")
-            return normals, max_grope_points, None
+            return None
 
-        save_path = os.path.join(WORK_DIR_PATH, 'zikken2.png')
-        cv2.imwrite(save_path, img)
+        # 作業用: 検出した線の表示
+        if Param.work_process:
+            cv2.imwrite(os.path.join(WORK_DIR_PATH, 'detect_line.png'), img)
 
         """
         重複している線を削除
-        """
-        # lineを並び替え
-        # print("lines\n", lines[0, 0])
 
-        print(f"lines.shape: {lines.shape}")
+        NOTE:
+        rho : 直線の原点からの距離
+        thre: 直線の法線との角度
+        - 描画して確かめた感じ、threの数値が高いほうが水平な気がする
+        """
+        # lineを並び替え(rhoの小さい順に並び替え)
         lines_reshape = lines.reshape(lines.shape[0], lines.shape[2])
         new_line = lines_reshape[np.argsort(lines_reshape[:, 0])]
 
-        pre_rho = 0
-        thre = 10
-        delete_index = []
+        """重なった線の削除"""
+        thre_a = 10  # 傾きの閾値
+        thre_b = 10  # 他の線の切片との差の閾値
+        pre_b = 0  # 比較用切片(分かりやすいようにここで初期化)
+        delete_index = []  # 削除するlineのindexを格納する
+        detect_first_line = False  # 最初の飛行機の羽を表す線を見つけたかどうかのフラグ
         for i, line in enumerate(new_line):
             rho, theta = line
-            if abs(pre_rho - rho) < thre:
-                delete_index.append(i)
-            pre_rho = rho
+            a, b = self.rho_theta_to_line(rho, theta)  # 傾きと切片を求める
+            a = round(a * (10 ** 8), 4)  # 値が小さいのでわかりやすいように補正
+            if detect_first_line is False:
+                if abs(a) < thre_a:
+                    pre_b = b
+                    detect_first_line = True
+                else:
+                    delete_index.append(i)
+                    continue
+            else:
+                # 傾きが水平でない or 前の線と近い場合
+                if abs(a) > thre_a or abs(pre_b - b) < thre_b:
+                    delete_index.append(i)
+                else:
+                    pre_b = b
 
-        new_line = np.delete(new_line, delete_index, 0)
-
-        img = point_img.copy()
-
-        if new_line is not None:
-            new_line = new_line.reshape(new_line.shape[0], 1, 2)
-            for rho, theta in new_line.squeeze(axis=1):
+        wing_line = np.delete(new_line, delete_index, 0)  # ラインの削除
+        # 作業用: 検出した線の表示
+        if Param.work_process:
+            img = point_img.copy()
+            wing_line = wing_line.reshape(wing_line.shape[0], 1, 2)
+            for rho, theta in wing_line.squeeze(axis=1):
                 self.draw_line(img, theta, rho)
-        else:
-            print("Error: 線が見つかりません")
-            return normals, max_grope_points, None
+            cv2.imwrite(os.path.join(WORK_DIR_PATH,
+                        'detect_line_selected.png'), img)
 
-        save_path = os.path.join(WORK_DIR_PATH, 'zikken3.png')
-        cv2.imwrite(save_path, img)
-
-        """
-        点群の割り当て
-        - 一枚のラインずつみていく？
-        """
-        thre = 10
-        classed_points = np.zeros((1, 3))
-
-        for i, point in enumerate(points):
-            point2 = point * 1000 + 500
-            if abs(point2[0] - new_line[0, 0, 0]) < thre:
-                # lineを構成する座標を抽出
-                classed_points = np.vstack((classed_points, point))
-                # 法線ベクトルの修正(逆にする)
-                normals[i] *= -1
-            if abs(point2[0] - new_line[2, 0, 0]) < thre:
-                # 法線ベクトルの修正(逆にする)
-                normals[i] *= -1
-        classed_points = classed_points[1:]
-
-        return normals, max_grope_points, classed_points
+        return wing_line
 
     def edit_normals(self, points: np.ndarray, normals=None) -> None:
         """法線ベクトルに関連する関数.
@@ -231,14 +177,11 @@ class EditMeshAirplane:
         if normals is None:
             normals = np.asarray(points.normals)
 
-        # グラフの追加
-        # self.show_normals(points, normals, title="Normals")
-
         """
         点群を法線の向きでグループ分け
         """
-        # 似た方角を向いたベクトルをグループ分け
-        self.groupe = np.zeros(normals.shape[0])
+        # self.groupe: 法線が'self.vectors_26'の中で一番近いベクトルのインデックスを格納
+        self.groupe = np.zeros(normals.shape[0])  # (2048,)
         for i, normal in enumerate(normals):
             min_theta = 180  # 比較するためのなす角
             for j, vector26 in enumerate(self.vectors_26):
@@ -247,112 +190,59 @@ class EditMeshAirplane:
                     self.groupe[i] = j
                     min_theta = angle
 
-        # count_vector_classの作成
-        # グループ分けされたベクトルの個数をカウントする
-        self.count_vector_class = np.zeros(26)
-        for i in range(self.vectors_26.shape[0]):
-            self.count_vector_class[i] = \
-                np.count_nonzero(self.groupe == i)
-        print(f"self.count_vector_class:\n {self.count_vector_class}")
+        # 羽の部分の点群を取得
+        wing_points_index = np.where(
+            (self.groupe == self.upper_vector_index) |
+            (self.groupe == self.lower_vector_index)
+        )
+        wing_points = points[wing_points_index]
 
-        # 最も多い要素を含むグループの点をグラフに追加
-        vector_index = np.argmax(self.count_vector_class)
-        max_grope_points = points[np.where(self.groupe == vector_index)]
-        # self.show_point(max_grope_points, title="points of many vector groupe")
-        # print(
-        #     f"self.vectors_26[vector_index]: {self.vectors_26[vector_index]}")
+        # 羽を検知 wing_line.shape: (線の本数, 2) ※2は[rho, theta]
+        wing_line = self.detect_wing(wing_points, normals)
 
-        # self.show_point_2D(max_grope_points, title="2D")
+        if wing_line is None:
+            return None, None
 
-        # ベクトルの符号を逆にしてみる
-        # invert_some_normals = normals.copy()
-        # invert_some_normals[np.where(self.groupe == vector_index)] *= -1
-        # self.show_normals(points, invert_some_normals, title="invert vector")
+        """法線ベクトルの編集"""
+        print(f"The number of wing line is {wing_line.shape[0]}")
+        
+        # (ラインの本数, 1, 2) >> (ラインの本数, 2)
+        wing_line = wing_line[:,0,:]
 
-        """
-        ハフ変換
-        """
-        # 点群の座標は少数なので、座標も1000倍しないとだめ？
-        img = np.zeros((1000, 1000), dtype=np.uint8)
-        img += 255
+        for line in wing_line:
+            print(self.rho_theta_to_line(rho=line[0], theta=line[1]))
 
-        # 点群の画像を作成
-        for point in max_grope_points:
-            x = int(point[0] * 1000) + 500
-            y = int(point[1] * 1000) + 500
-            cv2.circle(img, (x, y), 2, 0, -1)
 
-        point_img = img.copy()
-        save_path = os.path.join(WORK_DIR_PATH, 'zikken.png')
-        cv2.imwrite(save_path, point_img)
+        if wing_line.shape[0] == 0:
+            warnings.warn("wing line not found")
+            return None, None
+        
+        # 羽を表す点群の面が偶数枚ある場合、法線ベクトルの向きを交互にする
 
-        # エッジ検出
-        edges = cv2.Canny(img, 50, 150)
+        elif wing_line.shape[0] % 2 == 0:
+            thre = 10
+            # x, y座標で考える
+            count_line = np.array([0,0,0,0])
+            for i, point in enumerate(points):
+                min_dis = 100
+                min_line_index = 0
+                for j, line in enumerate(wing_line):
+                    a, b = self.rho_theta_to_line(rho=line[0], theta=line[1])
+                    y = int(point[1] * 1000) + 500
+                    # bを1000から引いているのは座標と画像上の座標を合わせるため
+                    dis = abs(y - (1000 - b)) # 線と点の距離(y軸方向)
+                    if dis < min_dis:
+                        min_dis = dis
+                        min_line_index = j
 
-        # ハフ変換
-        # NOTE: rho, theta = line
-        lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=200)
-
-        if lines is not None:
-            for rho, theta in lines.squeeze(axis=1):
-                self.draw_line(img, theta, rho)
-        else:
-            print("Error: 線が見つかりません")
-            return normals, None, None
-
-        save_path = os.path.join(WORK_DIR_PATH, 'zikken2.png')
-        cv2.imwrite(save_path, img)
-
-        """
-        重複している線を削除
-        """
-        # lineを並び替え
-        lines_reshape = lines.reshape(lines.shape[0], lines.shape[2])
-        new_line = lines_reshape[np.argsort(lines_reshape[:, 0])]
-
-        pre_rho = 0
-        thre = 10
-        delete_index = []
-        for i, line in enumerate(new_line):
-            rho, theta = line
-            if abs(pre_rho - rho) < thre:
-                delete_index.append(i)
-            pre_rho = rho
-
-        new_line = np.delete(new_line, delete_index, 0)
-
-        img = point_img.copy()
-
-        if new_line is not None:
-            new_line = new_line.reshape(new_line.shape[0], 1, 2)
-            for rho, theta in new_line.squeeze(axis=1):
-                self.draw_line(img, theta, rho)
-        else:
-            print("Error: 線が見つかりません")
-            return normals, None, None
-
-        save_path = os.path.join(WORK_DIR_PATH, 'zikken3.png')
-        cv2.imwrite(save_path, img)
-
-        """
-        点群の割り当て
-        - 一枚のラインずつみていく？
-        """
-        thre = 10
-        classed_points = np.zeros((1, 3))
-
-        for i, point in enumerate(points):
-            point2 = point * 1000 + 500
-            if abs(point2[0] - new_line[0, 0, 0]) < thre:
-                # lineを構成する座標を抽出
-                classed_points = np.vstack((classed_points, point))
-                # 法線ベクトルの修正(逆にする)
-                normals[i] *= -1
-            if abs(point2[0] - new_line[2, 0, 0]) < thre:
-                # 法線ベクトルの修正(逆にする)
-                normals[i] *= -1
-        classed_points = classed_points[1:]
-
-        # self.show_point(classed_points, title="Part of wing")
-
-        return normals, max_grope_points, classed_points
+                # ラインの切片と点のy座標を比較
+                if min_dis < thre:
+                    count_line[min_line_index] += 1
+                    # 羽の上を補正
+                    if min_line_index % 2 == 0 and normals[i, 1] < 0:
+                        normals[i] *= -1
+                    # 羽の下
+                    elif min_line_index % 2 == 1 and normals[i, 1] > 0:
+                        normals[i] *= -1
+                    
+            return normals, wing_points
