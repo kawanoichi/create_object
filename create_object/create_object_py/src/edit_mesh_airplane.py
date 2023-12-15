@@ -87,18 +87,26 @@ class EditMeshAirplane:
         img = np.zeros((1000, 1000), dtype=np.uint8)
         img += 255
 
-        # 点群の画像を作成
+        # 点群の画像を作成(正面)
+        front_point_img = img.copy()
         for point in max_grope_points:
             x = int(point[0] * 1000) + 500
             y = int(point[1] * 1000) + 500
-            cv2.circle(img, (x, y), 2, 0, -1)
-
-        point_img = img.copy()
+            cv2.circle(front_point_img, (x, y), 2, 0, -1)
         if Param.work_process:
-            cv2.imwrite(os.path.join(WORK_DIR_PATH, 'zikken.png'), point_img)
+            cv2.imwrite(os.path.join(WORK_DIR_PATH, 'front.png'), front_point_img)
+        
+        # 点群の画像を作成(正面)
+        upper_point_img = img.copy()
+        for point in max_grope_points:
+            x = int(point[0] * 1000) + 500
+            z = int(point[2] * 1000) + 500
+            cv2.circle(upper_point_img, (x, z), 2, 0, -1)
+        if Param.work_process:
+            cv2.imwrite(os.path.join(WORK_DIR_PATH, 'upper.png'), upper_point_img)
 
         # エッジ検出
-        edges = cv2.Canny(img, 50, 150)
+        edges = cv2.Canny(front_point_img, 50, 150)
 
         # ハフ変換
         # NOTE: rho, theta = line
@@ -154,7 +162,7 @@ class EditMeshAirplane:
         wing_line = np.delete(new_line, delete_index, 0)  # ラインの削除
         # 作業用: 検出した線の表示
         if Param.work_process:
-            img = point_img.copy()
+            img = front_point_img.copy()
             wing_line = wing_line.reshape(wing_line.shape[0], 1, 2)
             for rho, theta in wing_line.squeeze(axis=1):
                 self.draw_line(img, theta, rho)

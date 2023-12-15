@@ -334,7 +334,7 @@ if __name__ == "__main__":
     image_name = "two_wings_2.npy"
     image_name = "fighter.npy"
     image_name = "jet.npy"
-    # image_name = "plane.npy"
+    image_name = "plane.npy"
 
 
 
