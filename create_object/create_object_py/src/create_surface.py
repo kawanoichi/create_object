@@ -8,27 +8,17 @@ plyファイルからmeshを生成する.
 実行コマンド
 $ make surface_run
 """
-from edit_mesh_table import EditMeshTable
+# from edit_mesh_table import EditMeshTable
 from edit_mesh_airplane import EditMeshAirplane
 # import rotate_coordinate as rotate
 from param_create_surface import Param
 
-import cv2
+# import cv2
 import open3d as o3d
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import matplotlib
-from scipy.spatial import cKDTree
-# 最初は以下を実行する
-
-if Param.output_image:
-    matplotlib.use('Agg')
-else:
-    # $ sudo apt-get install python3-tk
-    matplotlib.use('TKAgg')
 # from sklearn.linear_model import RANSACRegressor
-
 
 class MakeSurface:
     """点群から表面を作りplyファイルに保存するクラス."""
@@ -77,6 +67,8 @@ class MakeSurface:
         """ファイル, ディレクトリの存在確認を行う関数."""
         if not os.path.exists(path):
             raise Exception(f"Error :Not exist '{path}'")
+        else:
+            print(f"{path} is exitst")
 
     def vector_26(self):
         """26方位ベクトル作成関数."""
@@ -196,7 +188,7 @@ class MakeSurface:
         # 座標データに回転行列を適用
         return np.dot(points, rotation_matrix.T)
 
-    def main(self, point_file_name, category=0) -> None:
+    def main(self, point_file_name, category=0, develop=False) -> None:
         """点群をメッシュ化し、表示する関数."""
 
         """
@@ -210,10 +202,12 @@ class MakeSurface:
         ply_file_name = os.path.splitext(point_file_name)[0] + ".ply"
         save_ply_path = os.path.join(self.ply_save_dir, ply_file_name)
 
+
         """
         メイン処理
         """
         # 点群データの読み込み
+        # return save_ply_path
         points = np.load(point_path)
 
         print(f"points.shape: {points.shape}")
@@ -243,7 +237,7 @@ class MakeSurface:
         self.show_normals(points, normals, title="Normals")
 
         """法線ベクトルの作成・編集 (Airplane)"""
-        if category == 0 and Param.edit_normal:
+        if category == 0 and Param.edit_normal and develop:
             airplane = EditMeshAirplane(vectors_26=self.vectors_26)
             edited_normals, wing_points = \
                 airplane.edit(points, normals)
@@ -252,7 +246,6 @@ class MakeSurface:
             if wing_points is not None:
                 self.show_point_2D(wing_points, title="2D")
                 
-        
 
         """法線ベクトルの作成・編集 (Table)"""
         # if category == 1 and Param.edit_normal:
@@ -263,7 +256,7 @@ class MakeSurface:
         self.show_normals(points, normals, title="After Normals")
 
         # 点群や法線ベクトルの表示
-        if Param.work_process:
+        if Param.work_process and develop:
             if Param.output_image:
                 save_path = os.path.join(WORK_DIR_PATH, 'result.png')
                 plt.savefig(save_path)
@@ -278,7 +271,7 @@ class MakeSurface:
         distances = point_cloud.compute_nearest_neighbor_distance()
 
         # 法線の表示
-        if Param.show_normal:
+        if Param.show_normal and develop:
             # draw_geometriesで表示
             o3d.visualization.draw_geometries([point_cloud], point_show_normal=True)
 
@@ -299,7 +292,7 @@ class MakeSurface:
             point_cloud, radii)
 
         # geometry.Geometry オブジェクトのリストを描画する関数(meshの表示)
-        if Param.show_mesh:
+        if Param.show_mesh and develop:
             # x: 右方向
             # y: 上
             # z: 手前
@@ -312,9 +305,17 @@ class MakeSurface:
 
 
 if __name__ == "__main__":
+    import matplotlib
+
+    if Param.output_image:
+        matplotlib.use('Agg')
+    else:
+        # 最初は以下を実行する
+        # $ sudo apt-get install python3-tk
+        matplotlib.use('TKAgg')
+
     import time
     start = time.time()
-
     SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
     PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
     WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")

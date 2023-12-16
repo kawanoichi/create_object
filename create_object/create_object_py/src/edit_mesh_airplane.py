@@ -1,8 +1,8 @@
 import os
-import warnings
+# import warnings
 import cv2
-import open3d as o3d
-import matplotlib.pyplot as plt
+# import open3d as o3d
+# import matplotlib.pyplot as plt
 import numpy as np
 # import matplotlib
 
@@ -15,8 +15,9 @@ WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
 
 class EditMeshAirplane:
-    def __init__(self, vectors_26):
+    def __init__(self, vectors_26, develop=False):
         self.vectors_26 = vectors_26
+        self.develop = develop
 
         # オブジェクトの正面方向
         self.front_vector = np.array([0, 0, -1])
@@ -109,7 +110,7 @@ class EditMeshAirplane:
             cv2.circle(beside_point_img, (y, z), 2, 0, -1)
 
         # 作業用
-        if Param.work_process:
+        if Param.work_process and Param.output_image and self.develop:
             cv2.imwrite(os.path.join(WORK_DIR_PATH,
                         'point_front.png'), front_point_img)
             cv2.imwrite(os.path.join(WORK_DIR_PATH,
@@ -129,7 +130,7 @@ class EditMeshAirplane:
             return None
 
         # 作業用: 検出したすべての線の表示
-        if Param.work_process:
+        if Param.work_process and Param.output_image and self.develop:
             detect_wing_img = front_point_img.copy()
             for rho, theta in lines.squeeze(axis=1):
                 self.draw_line(detect_wing_img, theta, rho)
@@ -173,17 +174,19 @@ class EditMeshAirplane:
                 else:
                     pre_b = b
 
-        wing_line = np.delete(new_line, delete_index, 0)  # ラインの削除
+        # ラインの削除
+        wing_line = np.delete(new_line, delete_index, 0)
+        
         # 作業用: 検出した線の表示
-        if Param.work_process:
+        if Param.work_process and Param.output_image and self.develop:
             selected_line_img = front_point_img.copy()
             wing_line = wing_line.reshape(wing_line.shape[0], 1, 2)
             for rho, theta in wing_line.squeeze(axis=1):
                 self.draw_line(selected_line_img, theta, rho)
             cv2.imwrite(os.path.join(WORK_DIR_PATH,
                         'detect_line_selected.png'), selected_line_img)
+            wing_line = wing_line[:, 0, :]
             del selected_line_img
-
         return wing_line
 
     def edit_normal_pattern1(self, points, normals, wing_line):
@@ -298,7 +301,7 @@ class EditMeshAirplane:
             print("Correction by pattern1")
             print(f"The number of wing line is {wing_line.shape[0]}")
             # (ラインの本数, 1, 2) >> (ラインの本数, 2)
-            wing_line = wing_line[:, 0, :]
+            # wing_line = wing_line[:, 0, :]
             # 羽を表す点群の面が偶数枚ある場合、法線ベクトルの向きを交互にする
             normals = self.edit_normal_pattern2(points, normals)
             normals = self.edit_normal_pattern1(points, normals, wing_line)

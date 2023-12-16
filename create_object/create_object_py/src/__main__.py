@@ -13,15 +13,15 @@ DATA_DIR_PATH = "/var/www/html/storage/app/public/data"
 
 class CreateObject:
     def __init__(self):
-        # with open(self.__predict_param_file) as fp:
-        #     predict_param = json.load(fp)
+        with open(self.__predict_param_file) as fp:
+            predict_param = json.load(fp)
 
-        # key = "base_path"
-        # self.check_param(key)
-        # self.__base_path = predict_param[key]
+        key = "base_path"
+        self.check_param(key)
+        self.__base_path = predict_param[key]
         pass
 
-    def main(image_name):
+    def main(self, image_name):
         success = True
 
         # pathの設定
@@ -37,7 +37,7 @@ class CreateObject:
                             point_save_dir_path=npy_dir_path)
             pp.predict(image_name)
         except Exception as e:
-            print(f"{e} (1)\n")
+            print(f"python script error:\n{e} (1)\n")
             success = False
 
         # npyファイルに権限付与
@@ -50,16 +50,16 @@ class CreateObject:
             else:
                 return f"{npy_file_path} is not exist"
         except Exception as e:
-            print(f"{e} (2)\n")
+            print(f"python script error:\n{e} (2)\n")
             success = False
 
         # 点群データからplyファイルの作成
         try:
             ms = MakeSurface(point_dir=npy_dir_path,
                             ply_save_dir=ply_dir_path)
-            ms.main(image_name)
+            ms.main(npy_file_name, category=0)
         except Exception as e:
-            print(f"{e} (3)\n")
+            print(f"python script error:\n{e} (3)\n")
             success = False
 
         # plyファイルに権限付与
@@ -72,7 +72,7 @@ class CreateObject:
             else:
                 return f"{ply_file_path} is not exist"
         except Exception as e:
-            print(f"{e} (4)\n")
+            print(f"python script error:\n{e} (4)\n")
             success = False
 
         return success

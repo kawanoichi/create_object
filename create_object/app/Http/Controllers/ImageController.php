@@ -11,17 +11,6 @@ class ImageController extends Controller
         return view('upload_form');
     }
 
-    public function upload2(Request $request)
-    {
-    if ($request->has('selectCategory')) {
-        $selectedOption = $request->input('selectCategory');
-        echo "ラジオボンタン選択肢:" . $selectedOption . "<br>";
-    } else {
-        echo "失敗";
-    }
-    return;
-    }
-
     public function upload(Request $request)
     {
         $developFlag = True;
@@ -31,7 +20,9 @@ class ImageController extends Controller
         // カテゴリの受付
         if ($request->has('selectCategory')) {
             $selectedOption = $request->input('selectCategory');
-            echo "ラジオボンタン選択肢:" . $selectedOption . "<br>";
+            if ($developFlag) {
+                echo "ラジオボンタン選択肢:" . $selectedOption . "<br>";
+            }
         } else {
             return "カテゴリーを選択して下さい<br>";
         }
@@ -76,16 +67,17 @@ class ImageController extends Controller
         $returnCode = 0;
         exec("{$executePythonCommand} {$imageName} {$selectedOption}", $output, $exitCode);
         
+        $extension = pathinfo($imageName, PATHINFO_EXTENSION);
+        $plyFileName = str_replace($extension, 'ply', $imageName);
+        $path = storage_path("app/public/data/{$plyFileName}");
+        
         if ($developFlag) {
             echo "python ----------------------------------------------<br>";
-            if ($exitCode !== 0) {
-                // 実行に失敗
+            if ($exitCode !== 0 || !file_exists($path)) {
                 $errorFlag = True;
                 echo "Python execute: failed<br>";
-                echo "Exit code: " . $exitCode . "<br>";
                 $pythonResult = implode("<br>", $output);
-                echo "Error output:<br>" . $pythonResult;
-                echo $pythonResult;
+                echo "Python Script Error output:<br>" . $pythonResult . "<br>";
             } else {
                 // 成功
                 $pythonResult = implode("<br>", $output);
@@ -96,13 +88,12 @@ class ImageController extends Controller
             }
             echo "----------------------------------------------------<br>";
         }
-            
-
         // 変換後の画像ファイル名
         $outputFileName = $imageName[-1];
         if ($errorFlag){
-            return "<br>失敗";
+            return "失敗";
         }else{
+            // return "成功";
             return redirect()->route('download', $imageName);
         }
     }
@@ -120,18 +111,5 @@ class ImageController extends Controller
             return "download: failed<br>";
         }
     }
-
-    public function testExecutePython()
-    {
-        // Pythonスクリプトを実行するコマンド
-        // $output = [];
-        // $returnCode = 0;
-        // exec('python3 /var/www/html/src/test.py', $output, $returnCode);
-
-        // $pythonResult = implode("<br>", $output);
-        // return $pythonResult;
-        return "実験";
-    }
-
 
 }

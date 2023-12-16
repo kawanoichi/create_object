@@ -22,7 +22,7 @@ class Param:
     output_image = True
 
     # 法線ベクトルの表示
-    show_normal = True
+    # show_normal = True
 
     # meshの表示
-    show_mesh = True
+    # show_mesh = True
