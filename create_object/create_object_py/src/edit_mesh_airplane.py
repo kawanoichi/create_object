@@ -93,17 +93,29 @@ class EditMeshAirplane:
             x = int(point[0] * 1000) + 500
             y = int(point[1] * 1000) + 500
             cv2.circle(front_point_img, (x, y), 2, 0, -1)
-        if Param.work_process:
-            cv2.imwrite(os.path.join(WORK_DIR_PATH, 'front.png'), front_point_img)
-        
-        # 点群の画像を作成(正面)
+
+        # 点群の画像を作成(上面)
         upper_point_img = img.copy()
         for point in max_grope_points:
             x = int(point[0] * 1000) + 500
             z = int(point[2] * 1000) + 500
             cv2.circle(upper_point_img, (x, z), 2, 0, -1)
+        
+        # 点群の画像を作成(横面)
+        beside_point_img = img.copy()
+        for point in max_grope_points:
+            y = int(point[1] * 1000) + 500
+            z = int(point[2] * 1000) + 500
+            cv2.circle(beside_point_img, (y, z), 2, 0, -1)
+
+        # 作業用
         if Param.work_process:
-            cv2.imwrite(os.path.join(WORK_DIR_PATH, 'upper.png'), upper_point_img)
+            cv2.imwrite(os.path.join(WORK_DIR_PATH,
+                        'point_front.png'), front_point_img)
+            cv2.imwrite(os.path.join(WORK_DIR_PATH,
+                        'point_upper.png'), upper_point_img)
+            cv2.imwrite(os.path.join(WORK_DIR_PATH,
+                        'point_beside.png'), beside_point_img)
 
         # エッジ検出
         edges = cv2.Canny(front_point_img, 50, 150)
@@ -112,16 +124,18 @@ class EditMeshAirplane:
         # NOTE: rho, theta = line
         lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=210)
 
-        if lines is not None:
-            for rho, theta in lines.squeeze(axis=1):
-                self.draw_line(img, theta, rho)
-        else:
-            print("Error: 線が見つかりません")
+        # 線が見つからない場合
+        if lines is None:
             return None
 
-        # 作業用: 検出した線の表示
+        # 作業用: 検出したすべての線の表示
         if Param.work_process:
-            cv2.imwrite(os.path.join(WORK_DIR_PATH, 'detect_line.png'), img)
+            detect_wing_img = front_point_img.copy()
+            for rho, theta in lines.squeeze(axis=1):
+                self.draw_line(detect_wing_img, theta, rho)
+            cv2.imwrite(os.path.join(WORK_DIR_PATH,
+                        'detect_line.png'), detect_wing_img)
+            del detect_wing_img
 
         """
         重複している線を削除
@@ -162,16 +176,80 @@ class EditMeshAirplane:
         wing_line = np.delete(new_line, delete_index, 0)  # ラインの削除
         # 作業用: 検出した線の表示
         if Param.work_process:
-            img = front_point_img.copy()
+            selected_line_img = front_point_img.copy()
             wing_line = wing_line.reshape(wing_line.shape[0], 1, 2)
             for rho, theta in wing_line.squeeze(axis=1):
-                self.draw_line(img, theta, rho)
+                self.draw_line(selected_line_img, theta, rho)
             cv2.imwrite(os.path.join(WORK_DIR_PATH,
-                        'detect_line_selected.png'), img)
+                        'detect_line_selected.png'), selected_line_img)
+            del selected_line_img
 
         return wing_line
 
-    def edit_normals(self, points: np.ndarray, normals=None) -> None:
+    def edit_normal_pattern1(self, points, normals, wing_line):
+        """法線ベクトルを編集する関数.
+        lineが偶数本見つかった場合に、法線ベクトルを面ごとに交互(表裏)にする関数
+        Args:
+            points: オブジェクト(飛行機)の点群
+            normals: 法線ベクトル
+            wing_line: 飛行機の羽の位置を表す線
+        Return:
+            normals: 編集を行った法線ベクトル
+        """
+        thre = 10
+        # x, y座標で考える
+        count_line = np.array([0, 0, 0, 0])
+        for i, point in enumerate(points):
+            min_dis = 100
+            min_line_index = 0
+            for j, line in enumerate(wing_line):
+                _, b = self.rho_theta_to_line(rho=line[0], theta=line[1])
+                y = int(point[1] * 1000) + 500
+                # bを1000から引いているのは座標と画像上の座標を合わせるため
+                dis = abs(y - (1000 - b))  # 線と点の距離(y軸方向)
+                if dis < min_dis:
+                    min_dis = dis
+                    min_line_index = j
+
+            # ラインの切片と点のy座標を比較
+            if min_dis < thre:
+                count_line[min_line_index] += 1
+                # 羽の上を補正
+                if min_line_index % 2 == 0 and normals[i, 1] < 0:
+                    normals[i, 1] *= -1
+                # 羽の下
+                elif min_line_index % 2 == 1 and normals[i, 1] > 0:
+                    normals[i, 1] *= -1
+        return normals
+
+    def edit_normal_pattern2(self, points, normals):
+        """法線ベクトルを編集する関数.
+        lineが偶数本見つかった場合に、法線ベクトルを面ごとに交互(表裏)にする関数
+        Args:
+            points: オブジェクト(飛行機)の点群
+            normals: 法線ベクトル
+        Return:
+            normals: 編集を行った法線ベクトル
+        """
+        for i, point in enumerate(points):
+            # 縦向き(x軸方向)のベクトルに着目する
+            if point[0] > 0 and normals[i, 0] < 0:
+                normals[i, 0] *= -1
+            elif point[0] < 0 and normals[i, 0] > 0:
+                normals[i, 0] *= -1
+            # 縦向き(y軸方向)のベクトルに着目する
+            if point[1] > 0 and normals[i, 1] < 0:
+                normals[i, 1] *= -1
+            elif point[1] < 0 and normals[i, 1] > 0:
+                normals[i, 1] *= -1
+            # 縦向き(z軸方向)のベクトルに着目する
+            if point[2] > 0 and normals[i, 2] < 0:
+                normals[i, 2] *= -1
+            elif point[2] < 0 and normals[i, 2] > 0:
+                normals[i, 2] *= -1
+        return normals
+
+    def edit(self, points: np.ndarray, normals=None) -> None:
         """法線ベクトルに関連する関数.
 
         Args:
@@ -198,6 +276,8 @@ class EditMeshAirplane:
                     self.groupe[i] = j
                     min_theta = angle
 
+        """法線ベクトルの編集"""
+
         # 羽の部分の点群を取得
         wing_points_index = np.where(
             (self.groupe == self.upper_vector_index) |
@@ -208,49 +288,19 @@ class EditMeshAirplane:
         # 羽を検知 wing_line.shape: (線の本数, 2) ※2は[rho, theta]
         wing_line = self.detect_wing(wing_points, normals)
 
+        # ラインが見つからない場合は、パターン２
         if wing_line is None:
-            return None, None
+            print("Correction by pattern2")
+            normals = self.edit_normal_pattern2(points, normals)
 
-        """法線ベクトルの編集"""
-        print(f"The number of wing line is {wing_line.shape[0]}")
-        
-        # (ラインの本数, 1, 2) >> (ラインの本数, 2)
-        wing_line = wing_line[:,0,:]
-
-        for line in wing_line:
-            print(self.rho_theta_to_line(rho=line[0], theta=line[1]))
-
-
-        if wing_line.shape[0] == 0:
-            warnings.warn("wing line not found")
-            return None, None
-        
-        # 羽を表す点群の面が偶数枚ある場合、法線ベクトルの向きを交互にする
-
+        # ラインが見つかった場合は、パターン１
         elif wing_line.shape[0] % 2 == 0:
-            thre = 10
-            # x, y座標で考える
-            count_line = np.array([0,0,0,0])
-            for i, point in enumerate(points):
-                min_dis = 100
-                min_line_index = 0
-                for j, line in enumerate(wing_line):
-                    a, b = self.rho_theta_to_line(rho=line[0], theta=line[1])
-                    y = int(point[1] * 1000) + 500
-                    # bを1000から引いているのは座標と画像上の座標を合わせるため
-                    dis = abs(y - (1000 - b)) # 線と点の距離(y軸方向)
-                    if dis < min_dis:
-                        min_dis = dis
-                        min_line_index = j
+            print("Correction by pattern1")
+            print(f"The number of wing line is {wing_line.shape[0]}")
+            # (ラインの本数, 1, 2) >> (ラインの本数, 2)
+            wing_line = wing_line[:, 0, :]
+            # 羽を表す点群の面が偶数枚ある場合、法線ベクトルの向きを交互にする
+            normals = self.edit_normal_pattern2(points, normals)
+            normals = self.edit_normal_pattern1(points, normals, wing_line)
 
-                # ラインの切片と点のy座標を比較
-                if min_dis < thre:
-                    count_line[min_line_index] += 1
-                    # 羽の上を補正
-                    if min_line_index % 2 == 0 and normals[i, 1] < 0:
-                        normals[i] *= -1
-                    # 羽の下
-                    elif min_line_index % 2 == 1 and normals[i, 1] > 0:
-                        normals[i] *= -1
-                    
-            return normals, wing_points
+        return normals, wing_points

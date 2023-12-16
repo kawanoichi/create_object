@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import matplotlib
+from scipy.spatial import cKDTree
 # 最初は以下を実行する
 
 if Param.output_image:
@@ -110,16 +111,16 @@ class MakeSurface:
         plt.xlim(-0.3, 0.3)
         plt.ylim(-0.3, 0.3)
         ax.set_zlim(-0.3, 0.3)
-
         self.graph_num += 1
-
         plt.title(title)
-
         ax.set(xlabel='x', ylabel='z', zlabel='y')
+        colors1 = np.where(points[:, 0] > 0, 'red', 'blue')
+        colors2 = np.where(points[:, 0] > 0, 'purple', 'green')
+        colors = np.where(points[:, 1] > 0, colors1, colors2)
         ax.scatter(points[:, 0],
                    points[:, 2],
                    points[:, 1],
-                   c='b')
+                   c=colors)
 
     def show_point_2D(self, points, title="None") -> None:
         """点群を表示する関数.
@@ -225,13 +226,15 @@ class MakeSurface:
 
         # グラフに追加
         self.show_point(points, title="Rotated Input Point")
-
+        
         # NumPyの配列からPointCloudを作成
         point_cloud = o3d.geometry.PointCloud()
         point_cloud.points = o3d.utility.Vector3dVector(points)
 
         # 法線情報を計算
-        point_cloud.estimate_normals()
+        point_cloud.estimate_normals(
+            # search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.001, max_nn=30)
+        )
 
         # 法線ベクトルの編集(numpy配列に変換)
         normals = np.asarray(point_cloud.normals)
@@ -243,12 +246,13 @@ class MakeSurface:
         if category == 0 and Param.edit_normal:
             airplane = EditMeshAirplane(vectors_26=self.vectors_26)
             edited_normals, wing_points = \
-                airplane.edit_normals(points, normals)
+                airplane.edit(points, normals)
             if edited_normals is not None:
                 normals = edited_normals
             if wing_points is not None:
                 self.show_point_2D(wing_points, title="2D")
-
+                
+        
 
         """法線ベクトルの作成・編集 (Table)"""
         # if category == 1 and Param.edit_normal:
@@ -275,8 +279,8 @@ class MakeSurface:
 
         # 法線の表示
         if Param.show_normal:
-            o3d.visualization.draw_geometries(
-                [point_cloud], point_show_normal=True)
+            # draw_geometriesで表示
+            o3d.visualization.draw_geometries([point_cloud], point_show_normal=True)
 
         # 近傍距離の平均
         avg_dist = np.mean(distances)
@@ -329,16 +333,14 @@ if __name__ == "__main__":
     #     print(massage)
     # print(line)
 
-    # image_name = "airplane.npy"
+    image_name = "airplane.npy"
     image_name = "two_wings_1.npy"
-    image_name = "two_wings_2.npy"
-    image_name = "fighter.npy"
-    image_name = "jet.npy"
-    image_name = "plane.npy"
+    # image_name = "two_wings_2.npy"
+    # image_name = "fighter.npy"
+    # image_name = "jet.npy"
+    # image_name = "plane.npy"
 
-
-
-    ms = MakeSurface(point_dir=WORK_DIR_PATH,
+    ms = MakeSurface(point_dir=os.path.join(WORK_DIR_PATH, "predict_points"),
                      ply_save_dir=WORK_DIR_PATH)
 
     ms.main(image_name)

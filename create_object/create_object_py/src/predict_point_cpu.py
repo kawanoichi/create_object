@@ -112,16 +112,22 @@ if __name__ == "__main__":
     print(f"WORK_DIR_PATH   : {WORK_DIR_PATH}")
 
     # 画像のファイル名
-    image_name = "two_wings_1.png"
-    image_name = "two_wings_2.png"
-    image_name = "fighter.png"
-    image_name = "jet.png"
-    image_name = "plane.png"
+    image_list = [
+        "airplane.png",
+        "two_wings_1.png",
+        "two_wings_2.png",
+        "fighter.png",
+        "jet.png",
+        "plane.png"
+    ]
 
     # 点群予測クラスのインスタンス化
     pp = Predict_Point(img_dir_path=os.path.join(WORK_DIR_PATH, "input_image", "airplane"),
-                       model_path=os.path.join(WORK_DIR_PATH, "modelG_50.pth"),
-                       point_save_dir_path=WORK_DIR_PATH)
-    pp.predict(image_name)
+                       model_path=os.path.join(
+                           WORK_DIR_PATH, "learned_model", "modelG_100.pth"),
+                       #    model_path=os.path.join(WORK_DIR_PATH, "modelG_50.pth"),
+                       point_save_dir_path=os.path.join(WORK_DIR_PATH, "predict_points"))
+    for image_name in image_list:
+        pp.predict(image_name)
 
     print("終了")
