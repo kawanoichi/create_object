@@ -65,7 +65,8 @@ class ImageController extends Controller
         // Pythonスクリプトを実行
         $output = [];
         $returnCode = 0;
-        exec("{$executePythonCommand} {$imageName} {$selectedOption}", $output, $exitCode);
+        // poetry run python3 -m src -img airplane.png -category 0
+        exec("{$executePythonCommand} -img {$imageName} -category {$selectedOption}", $output, $exitCode);
         
         $extension = pathinfo($imageName, PATHINFO_EXTENSION);
         $plyFileName = str_replace($extension, 'ply', $imageName);

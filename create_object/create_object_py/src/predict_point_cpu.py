@@ -22,6 +22,7 @@ class Predict_Point:
                  model_path: str,
                  point_save_dir_path: str,
                  num_points: int = 2048):
+                #  num_points: int = 1024):
 
         self.img_dir_path = img_dir_path
         self.model_path = model_path
@@ -56,9 +57,10 @@ class Predict_Point:
         """
         # 画像読み込み(128, 128, 3)
         image = cv2.imread(read_img_path)
-        image = cv2.resize(image, (128, 128))
-        image = image[4:-5, 4:-5, :3]
-
+        if image.shape[0] != 137 or image.shape[1] != 137:
+            image = cv2.resize(image, (137, 137))
+        image = image[4:-5, 4:-5, :3] # これなんのため？
+        
         # BGRからRGBへの変換
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -101,33 +103,45 @@ class Predict_Point:
 
 
 if __name__ == "__main__":
-
+    """
+    実行コマンド
+        $ poetry run python3 src/predict_point_cpu.py --catecory_number 0
+        $ poetry run python3 src/predict_point_cpu.py --catecory_number 1
+    # """
     SCRIPT_DIR_PATH = os.path.dirname(
         os.path.abspath(__file__))  # create_object_py/src
     PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)  # create_object_py
     WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+    IMAGE_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data", "input_image")
 
-    print(f"SCRIPT_DIR_PATH : {SCRIPT_DIR_PATH}")
-    print(f"PROJECT_DIR_PATH: {PROJECT_DIR_PATH}")
-    print(f"WORK_DIR_PATH   : {WORK_DIR_PATH}")
+    import argparse
+    parser = argparse.ArgumentParser(description='コマンドライン引数の説明')
+    parser.add_argument('--catecory_number', type=str, default="0", help='オプション引数')
+    args = parser.parse_args()
+
+    import json
+    category_file=os.path.join(SCRIPT_DIR_PATH, "category.json")
+    with open(category_file) as fp:
+        category_data = json.load(fp)
+
+    # Option 
+    category_name = category_data[str(args.catecory_number)]
+    epoch = 100 if args.catecory_number == "0" else 50
+    model_file_name = category_name+"_modelG_"+str(epoch)+".pth"
 
     # 画像のファイル名
-    image_list = [
-        "airplane.png",
-        "two_wings_1.png",
-        "two_wings_2.png",
-        "fighter.png",
-        "jet.png",
-        "plane.png"
-    ]
+    image_dir_path = os.path.join(
+        WORK_DIR_PATH, "input_image", category_name)
+    image_files = [file for file in os.listdir(image_dir_path) if file.endswith('.png')]
 
+    # """
     # 点群予測クラスのインスタンス化
-    pp = Predict_Point(img_dir_path=os.path.join(WORK_DIR_PATH, "input_image", "airplane"),
+    pp = Predict_Point(img_dir_path=os.path.join(WORK_DIR_PATH, "input_image", category_name),
                        model_path=os.path.join(
-                           WORK_DIR_PATH, "learned_model", "modelG_100.pth"),
-                       #    model_path=os.path.join(WORK_DIR_PATH, "modelG_50.pth"),
+                           WORK_DIR_PATH, "learned_model", model_file_name),
                        point_save_dir_path=os.path.join(WORK_DIR_PATH, "predict_points"))
-    for image_name in image_list:
+    for image_name in image_files:
         pp.predict(image_name)
+    # """
 
     print("終了")

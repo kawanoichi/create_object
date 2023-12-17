@@ -101,7 +101,7 @@ class EditMeshAirplane:
             x = int(point[0] * 1000) + 500
             z = int(point[2] * 1000) + 500
             cv2.circle(upper_point_img, (x, z), 2, 0, -1)
-        
+
         # 点群の画像を作成(横面)
         beside_point_img = img.copy()
         for point in max_grope_points:
@@ -176,7 +176,7 @@ class EditMeshAirplane:
 
         # ラインの削除
         wing_line = np.delete(new_line, delete_index, 0)
-        
+
         # 作業用: 検出した線の表示
         if Param.work_process and Param.output_image and self.develop:
             selected_line_img = front_point_img.copy()

@@ -8,7 +8,7 @@ plyファイルからmeshを生成する.
 実行コマンド
 $ make surface_run
 """
-# from edit_mesh_table import EditMeshTable
+from edit_mesh_table import EditMeshTable
 from edit_mesh_airplane import EditMeshAirplane
 # import rotate_coordinate as rotate
 from param_create_surface import Param
@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 # from sklearn.linear_model import RANSACRegressor
+
 
 class MakeSurface:
     """点群から表面を作りplyファイルに保存するクラス."""
@@ -202,7 +203,6 @@ class MakeSurface:
         ply_file_name = os.path.splitext(point_file_name)[0] + ".ply"
         save_ply_path = os.path.join(self.ply_save_dir, ply_file_name)
 
-
         """
         メイン処理
         """
@@ -220,7 +220,7 @@ class MakeSurface:
 
         # グラフに追加
         self.show_point(points, title="Rotated Input Point")
-        
+
         # NumPyの配列からPointCloudを作成
         point_cloud = o3d.geometry.PointCloud()
         point_cloud.points = o3d.utility.Vector3dVector(points)
@@ -241,16 +241,18 @@ class MakeSurface:
             airplane = EditMeshAirplane(vectors_26=self.vectors_26)
             edited_normals, wing_points = \
                 airplane.edit(points, normals)
+            
             if edited_normals is not None:
                 normals = edited_normals
             if wing_points is not None:
                 self.show_point_2D(wing_points, title="2D")
-                
 
         """法線ベクトルの作成・編集 (Table)"""
-        # if category == 1 and Param.edit_normal:
-        #     table = EditMeshTable(vectors_26=self.vectors_26)
-        #     normals = table.edit_normals(points, normals)
+        if category == 1 and Param.edit_normal:
+            table = EditMeshTable(vectors_26=self.vectors_26)
+            edited_normals = table.edit_normals(points, normals)
+            if edited_normals is not None:
+                normals = edited_normals
 
         # 編集後の法線ベクトルを表示
         self.show_normals(points, normals, title="After Normals")
@@ -273,7 +275,8 @@ class MakeSurface:
         # 法線の表示
         if Param.show_normal and develop:
             # draw_geometriesで表示
-            o3d.visualization.draw_geometries([point_cloud], point_show_normal=True)
+            o3d.visualization.draw_geometries(
+                [point_cloud], point_show_normal=True)
 
         # 近傍距離の平均
         avg_dist = np.mean(distances)
