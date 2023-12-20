@@ -12,11 +12,9 @@ WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
 class EditMeshAirplane:
     def __init__(self, vectors_26, develop=False, log=None):
-        # ログ用
-        self.log = log
-
         self.vectors_26 = vectors_26
         self.develop = develop
+        self.log = log  # ログ用
 
         # オブジェクトの正面方向
         self.front_vector = np.array([0, 0, -1])
@@ -265,9 +263,7 @@ class EditMeshAirplane:
         if normals is None:
             normals = np.asarray(points.normals)
 
-        """
-        点群を法線の向きでグループ分け
-        """
+        """点群を法線の向きでグループ分け"""
         # self.groupe: 法線が'self.vectors_26'の中で一番近いベクトルのインデックスを格納
         self.groupe = np.zeros(normals.shape[0])  # (2048,)
         for i, normal in enumerate(normals):

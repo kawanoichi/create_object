@@ -105,13 +105,13 @@ class MakeSurface:
         ax.set_zlim(-0.3, 0.3)
         self.graph_num += 1
         plt.title(title)
-        ax.set(xlabel='x', ylabel='z', zlabel='y')
+        ax.set(xlabel='x', ylabel='y', zlabel='z')
         colors1 = np.where(points[:, 0] > 0, 'red', 'blue')
         colors2 = np.where(points[:, 0] > 0, 'purple', 'green')
         colors = np.where(points[:, 1] > 0, colors1, colors2)
         ax.scatter(points[:, 0],
-                   points[:, 2],
                    points[:, 1],
+                   points[:, 2],
                    c=colors)
 
     def show_point_2D(self, points, title="None") -> None:
@@ -228,7 +228,7 @@ class MakeSurface:
         point_cloud.estimate_normals(
             # search_param=o3d.geometry.KDTreeSearchParamHybrid(
             #     radius=1, max_nn=30)
-            )
+        )
         # 法線ベクトルの編集(numpy配列に変換)
         normals = np.asarray(point_cloud.normals)
         self.show_normals(points, normals, title="Normals")  # グラフの追加
@@ -316,6 +316,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='コマンドライン引数の説明')
     parser.add_argument('--catecory_number', type=str,
                         default="0", help='オプション引数')
+    parser.add_argument('--image_number', type=int,
+                        default="0", help='オプション引数')
     args = parser.parse_args()
 
     import json
@@ -328,15 +330,15 @@ if __name__ == "__main__":
     if args.catecory_number == "0":
         image_list = ["airplane.npy", "two_wings_1.npy", "two_wings_2.npy",
                       "fighter.npy", "jet.npy", "plane.npy"]
-        image_name = image_list[0]
+        image_name = image_list[args.image_number]
     if args.catecory_number == "1":
         image_list = ["chair_00.npy", "chair_01.npy", "chair_02.npy",
                       "chair_03.npy", "chair_04.npy", "chair_05.npy"]
-        image_name = image_list[0]
+        image_name = image_list[args.image_number]
 
     ms = MakeSurface(point_dir=os.path.join(WORK_DIR_PATH, "predict_points", category_name),
                      ply_save_dir=WORK_DIR_PATH)
-    
+
     ms.log.add(title="Category", log=category_name)
 
     try:

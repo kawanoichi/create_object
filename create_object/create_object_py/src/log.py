@@ -34,7 +34,7 @@ class Log:
         経由しているときに弱い
         """
         caller_frame = inspect.currentframe().f_back.f_back
-        if caller_frame is not None: 
+        if caller_frame is not None:
             script_name = os.path.basename(caller_frame.f_globals['__file__'])
             locate = f"{script_name}({inspect.currentframe().f_back.f_lineno})"
             self.locate_list.append(locate)

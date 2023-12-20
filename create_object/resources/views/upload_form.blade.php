@@ -2,6 +2,7 @@
 <!-- css path: /var/www/html/public/css -->
 <!-- json path: /var/www/html/public/category.json -->
 <!-- json path: /var/www/html/create_object_py/src/category.json -->
+<!-- NOTE: CSSが反映されない場合,キャッシュを強制的にクリアする >> (Shift + F5) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,31 +12,13 @@
     <!-- 外部CSSの読み込み -->
     <link rel="stylesheet" href="css/upload_form.css" type="text/css"> 
     <title>Image Upload</title>
-
-    <!-- <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script>
-        $(document).ready(function(){
-            // JSONファイルを読み込む
-            $.getJSON("category.json", function(data){
-                // キーと値を表示する
-                var list = $("<ul></ul>");
-                $.each(data, function(key, value){
-                    var listItem = $("<li>" + key + ": " + value + "</li>");
-                    list.append(listItem);
-                });
-
-                // HTML内の特定の要素に結果を追加
-                $("#jsonValues").append(list);
-            });
-        });
-    </script> -->
 </head>
-
 
 <body>
     <!-- Header -->
     <div calss="header">
         <h1>Header</h1>
+        <p>aa</p>
     </div>
     
     <!-- Main -->

@@ -59,14 +59,14 @@ class ImageController extends Controller
             echo "upload: failed<br>";
         }
 
-        // パスの作成
+        // 実行コマンド
         $executePythonCommand = 'python3 /var/www/html/create_object_py/src';
         
         // Pythonスクリプトを実行
         $output = [];
         $returnCode = 0;
         // poetry run python3 -m src -img airplane.png -category 0
-        exec("{$executePythonCommand} -img {$imageName} -category {$selectedOption}", $output, $exitCode);
+        exec("{$executePythonCommand} -img {$imageName} -category {$selectedOption} --web", $output, $exitCode);
         
         $extension = pathinfo($imageName, PATHINFO_EXTENSION);
         $plyFileName = str_replace($extension, 'ply', $imageName);
