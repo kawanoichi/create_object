@@ -22,8 +22,6 @@ class Predict_Point:
                  model_path: str,
                  point_save_dir_path: str,
                  num_points: int = 2048):
-                #  num_points: int = 1024):
-
         self.img_dir_path = img_dir_path
         self.model_path = model_path
         self.point_save_dir_path = point_save_dir_path
@@ -31,13 +29,18 @@ class Predict_Point:
 
         self.check_exist(self.img_dir_path)
         self.check_exist(self.model_path)
-        self.check_exist(self.point_save_dir_path)
+        self.make_dir(self.point_save_dir_path)
 
     @staticmethod
-    def check_exist(path):
+    def check_exist(path) -> None:
         """ファイル, ディレクトリの存在確認を行う関数."""
         if not os.path.exists(path):
             raise Exception(f"Error :Not exist '{path}'")
+
+    @staticmethod
+    def make_dir(path) -> None:
+        """中間ディレクトリを作成する関数."""
+        os.makedirs(path, exist_ok=True)
 
     def predict(self, image_name):
         """学習済みモデルを使用して画像から点群を生成する."""
@@ -59,8 +62,8 @@ class Predict_Point:
         image = cv2.imread(read_img_path)
         if image.shape[0] != 137 or image.shape[1] != 137:
             image = cv2.resize(image, (137, 137))
-        image = image[4:-5, 4:-5, :3] # これなんのため？
-        
+        image = image[4:-5, 4:-5, :3]  # これなんのため？
+
         # BGRからRGBへの変換
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -99,6 +102,7 @@ class Predict_Point:
         predict_points = np.transpose(points, (1, 0))
 
         # 予測座標の保存
+        print(f"save_path: {save_path}")
         np.save(save_path, predict_points)
 
 
@@ -116,30 +120,36 @@ if __name__ == "__main__":
 
     import argparse
     parser = argparse.ArgumentParser(description='コマンドライン引数の説明')
-    parser.add_argument('--catecory_number', type=str, default="0", help='オプション引数')
+    parser.add_argument('--catecory_number', type=str,
+                        default="0", help='オプション引数')
     args = parser.parse_args()
 
     import json
-    category_file=os.path.join(SCRIPT_DIR_PATH, "category.json")
+    category_file = os.path.join(SCRIPT_DIR_PATH, "category.json")
     with open(category_file) as fp:
         category_data = json.load(fp)
 
-    # Option 
+    # Option
     category_name = category_data[str(args.catecory_number)]
-    epoch = 100 if args.catecory_number == "0" else 50
+    epoch = 100
+    # num_points = 1024
+    num_points = 2048
     model_file_name = category_name+"_modelG_"+str(epoch)+".pth"
 
     # 画像のファイル名
     image_dir_path = os.path.join(
         WORK_DIR_PATH, "input_image", category_name)
-    image_files = [file for file in os.listdir(image_dir_path) if file.endswith('.png')]
+    image_files = [file for file in os.listdir(
+        image_dir_path) if file.endswith('.png')]
 
     # """
     # 点群予測クラスのインスタンス化
     pp = Predict_Point(img_dir_path=os.path.join(WORK_DIR_PATH, "input_image", category_name),
                        model_path=os.path.join(
-                           WORK_DIR_PATH, "learned_model", model_file_name),
-                       point_save_dir_path=os.path.join(WORK_DIR_PATH, "predict_points"))
+                           WORK_DIR_PATH, "learned_model", str(num_points), model_file_name),
+                       point_save_dir_path=os.path.join(
+                           WORK_DIR_PATH, "predict_points", category_name),
+                       num_points=num_points)
     for image_name in image_files:
         pp.predict(image_name)
     # """

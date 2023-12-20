@@ -1,10 +1,6 @@
 import os
-# import warnings
 import cv2
-# import open3d as o3d
-# import matplotlib.pyplot as plt
 import numpy as np
-# import matplotlib
 
 from param_create_surface import Param
 
@@ -15,7 +11,10 @@ WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
 
 class EditMeshAirplane:
-    def __init__(self, vectors_26, develop=False):
+    def __init__(self, vectors_26, develop=False, log=None):
+        # ログ用
+        self.log = log
+
         self.vectors_26 = vectors_26
         self.develop = develop
 
@@ -252,7 +251,7 @@ class EditMeshAirplane:
                 normals[i, 2] *= -1
         return normals
 
-    def edit(self, points: np.ndarray, normals=None) -> None:
+    def edit_normal(self, points: np.ndarray, normals=None) -> None:
         """法線ベクトルに関連する関数.
 
         Args:
@@ -293,13 +292,13 @@ class EditMeshAirplane:
 
         # ラインが見つからない場合は、パターン２
         if wing_line is None:
-            print("Correction by pattern2")
+            self.log.add(title="Correction", log="pattern2")
             normals = self.edit_normal_pattern2(points, normals)
 
         # ラインが見つかった場合は、パターン１
         elif wing_line.shape[0] % 2 == 0:
-            print("Correction by pattern1")
-            print(f"The number of wing line is {wing_line.shape[0]}")
+            self.log.add(title="Correction", log="pattern1")
+            self.log.add(title="Detect Line", log=wing_line.shape[0])
             # (ラインの本数, 1, 2) >> (ラインの本数, 2)
             # wing_line = wing_line[:, 0, :]
             # 羽を表す点群の面が偶数枚ある場合、法線ベクトルの向きを交互にする

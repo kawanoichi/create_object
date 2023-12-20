@@ -17,7 +17,7 @@ class CreateObject:
         with open(category_file) as fp:
             self.category_data = json.load(fp)
 
-    def main(self, image_name, category_num, develop):
+    def main(self, image_name, category_num, develop, execute_web):
         print("main実行OK")
         global DATA_DIR_PATH
         success = True
@@ -42,7 +42,6 @@ class CreateObject:
         ply_dir_path = DATA_DIR_PATH
         ply_file_path = os.path.join(ply_dir_path, ply_file_name)
 
-
         # develop path
         if develop:
             input_img_dir_path = os.path.join(
@@ -55,7 +54,8 @@ class CreateObject:
         try:
             pp = Predict_Point(img_dir_path=input_img_dir_path,
                                model_path=model_path,
-                               point_save_dir_path=npy_dir_path)
+                               point_save_dir_path=npy_dir_path,
+                               num_points=2048)
             pp.predict(image_name)
         except Exception as e:
             print(f"python script error:\n{e} (1)\n")
@@ -77,7 +77,8 @@ class CreateObject:
         try:
             ms = MakeSurface(point_dir=npy_dir_path,
                              ply_save_dir=ply_dir_path)
-            ms.main(npy_file_name, category=category_num)
+            ms.main(npy_file_name, category=category_num,
+                    execute_web=execute_web)
         except Exception as e:
             print(f"python script error:\n{e} (3)\n")
             success = False
@@ -103,7 +104,7 @@ if __name__ == "__main__":
         $ poetry run python3 -m src -img airplane.png -category 0 --develop
         $ poetry run python3 -m src -img chair_00.png -category 1 --develop
     # """
-    
+
     print("### python ###")
     import argparse
     # ArgumentParserオブジェクトの作成
@@ -114,6 +115,7 @@ if __name__ == "__main__":
     parser.add_argument('--catecory_number', "-category", type=str,
                         default=0, help='生成するオブジェクトのカテゴリ')
     parser.add_argument('--develop', action='store_true', help='開発用フラグ')
+    parser.add_argument('--web', action='store_true', help='開発用フラグ')
 
     # コマンドライン引数の解析
     args = parser.parse_args()
@@ -121,6 +123,7 @@ if __name__ == "__main__":
     create = CreateObject()
     success = create.main(image_name=args.img_name,
                           category_num=args.catecory_number,
-                          develop=args.develop)
+                          develop=args.develop,
+                          execute_web=args.web)
     print(f"Python is success") if success else print(f"Python is failed")
     print("###########")

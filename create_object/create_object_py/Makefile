@@ -1,20 +1,18 @@
 help:
 	@echo 3Dオブジェクト生成ツールを実行する
 	@echo "$$ make run"
-	@echo 画像から点群生成
-	@echo "$$ make predict"
 	@echo 点群に表面情報を生成
 	@echo "$$ make surface"
 	@echo 権限を許可する
 	@echo "$$ make permission"
 	@echo 全てのソースコードをフォーマットする
 	@echo "$$ make format"
+	@echo 全てのソースコードをフォーマットする
+	@echo "$$ make rm"
+	@echo "$$ make npy_rm"
 
 run:
 	python3 -m src airplane.png
-
-predict:
-	poetry run python3 src/predict_point_cpu.py
 
 surface:
 	poetry run python3 src/create_surface.py
@@ -26,11 +24,8 @@ permission:
 format:
 	python3 -m autopep8 -i -r src/ tests/
 
-zikken:
-	python3 src/read_image.py
-
-env_pip:
-	bash create_env.sh
-
-make rm:
+rm:
 	find data/ -maxdepth 1 -type f \( -not -name 'airplane.png' -and -not -name '*.npy' -and -not -name '*.pth' \) -delete
+
+npy_rm:
+	rm data/predict_points/*/*.npy

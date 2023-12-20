@@ -8,6 +8,7 @@ class Param:
     edit_normal = False
     work_process = False
     output_image = False
+    point_only = False
     show_normal = False
     show_mesh = False
 
@@ -18,8 +19,11 @@ class Param:
     edit_normal = True
 
     # 作業過程のグラフの表示
-    work_process = True
-    output_image = True
+    # work_process = True
+    # output_image = True
+
+    # meshなしplyファイルを作成するか
+    # point_only = True
 
     # 法線ベクトルの表示
     # show_normal = True

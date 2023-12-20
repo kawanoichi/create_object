@@ -8,17 +8,15 @@ plyファイルからmeshを生成する.
 実行コマンド
 $ make surface_run
 """
-from edit_mesh_table import EditMeshTable
+from edit_mesh_chair import EditMeshChair
 from edit_mesh_airplane import EditMeshAirplane
-# import rotate_coordinate as rotate
 from param_create_surface import Param
+from log import Log
 
-# import cv2
 import open3d as o3d
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-# from sklearn.linear_model import RANSACRegressor
 
 
 class MakeSurface:
@@ -32,6 +30,9 @@ class MakeSurface:
         Args:
             point_file (str): 点群ファイル(.npy)
         """
+        # ログ用
+        self.log = Log()
+
         # Path
         self.point_dir = point_dir
         self.ply_save_dir = ply_save_dir
@@ -68,8 +69,6 @@ class MakeSurface:
         """ファイル, ディレクトリの存在確認を行う関数."""
         if not os.path.exists(path):
             raise Exception(f"Error :Not exist '{path}'")
-        else:
-            print(f"{path} is exitst")
 
     def vector_26(self):
         """26方位ベクトル作成関数."""
@@ -189,7 +188,7 @@ class MakeSurface:
         # 座標データに回転行列を適用
         return np.dot(points, rotation_matrix.T)
 
-    def main(self, point_file_name, category=0, develop=False) -> None:
+    def main(self, point_file_name, category=0, develop=False, execute_web=False) -> None:
         """点群をメッシュ化し、表示する関数."""
 
         """
@@ -200,59 +199,61 @@ class MakeSurface:
         self.check_exist(point_path)
 
         # 保存PLYパス
+        ply_file_name = os.path.splitext(point_file_name)[0] + "_point.ply"
+        save_point_path = os.path.join(self.ply_save_dir, ply_file_name)
+
         ply_file_name = os.path.splitext(point_file_name)[0] + ".ply"
-        save_ply_path = os.path.join(self.ply_save_dir, ply_file_name)
+        save_mesh_path = os.path.join(self.ply_save_dir, ply_file_name)
 
         """
         メイン処理
         """
         # 点群データの読み込み
-        # return save_ply_path
         points = np.load(point_path)
-
-        print(f"points.shape: {points.shape}")
-
-        # グラフの追加
-        self.show_point(points, title="Input Point")
+        self.log.add(title="points.shape", log=points.shape)
+        self.show_point(points, title="Input Point")  # グラフの追加
 
         # オブジェクトの向きを調整
         points = self.rotate_object(points, angle=-90, axis="z")
-
-        # グラフに追加
-        self.show_point(points, title="Rotated Input Point")
+        self.show_point(points, title="Rotated Input Point")  # グラフに追加
 
         # NumPyの配列からPointCloudを作成
         point_cloud = o3d.geometry.PointCloud()
         point_cloud.points = o3d.utility.Vector3dVector(points)
+        if Param.point_only and develop:
+            o3d.io.write_point_cloud(save_point_path, point_cloud)
 
+        """法線ベクトルの作成"""
         # 法線情報を計算
         point_cloud.estimate_normals(
-            # search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.001, max_nn=30)
-        )
-
+            # search_param=o3d.geometry.KDTreeSearchParamHybrid(
+            #     radius=1, max_nn=30)
+            )
         # 法線ベクトルの編集(numpy配列に変換)
         normals = np.asarray(point_cloud.normals)
+        self.show_normals(points, normals, title="Normals")  # グラフの追加
 
-        # グラフの追加
-        self.show_normals(points, normals, title="Normals")
+        """法線ベクトルの編集"""
+        if (Param.edit_normal and develop) or execute_web:
+            if category == "0":
+                self.log.add(title="Edit Mode", log="Airplane")
+                edit = EditMeshAirplane(vectors_26=self.vectors_26,
+                                        develop=develop,
+                                        log=self.log)
+            elif category == "1":
+                self.log.add(title="Edit Mode", log="Chair")
+                edit = EditMeshChair(vectors_26=self.vectors_26,
+                                     develop=develop,
+                                     log=self.log)
+            else:
+                raise Exception("Category Error")
 
-        """法線ベクトルの作成・編集 (Airplane)"""
-        if category == 0 and Param.edit_normal and develop:
-            airplane = EditMeshAirplane(vectors_26=self.vectors_26)
             edited_normals, wing_points = \
-                airplane.edit(points, normals)
-            
+                edit.edit_normal(points, normals)
             if edited_normals is not None:
                 normals = edited_normals
             if wing_points is not None:
                 self.show_point_2D(wing_points, title="2D")
-
-        """法線ベクトルの作成・編集 (Table)"""
-        if category == 1 and Param.edit_normal:
-            table = EditMeshTable(vectors_26=self.vectors_26)
-            edited_normals = table.edit_normals(points, normals)
-            if edited_normals is not None:
-                normals = edited_normals
 
         # 編集後の法線ベクトルを表示
         self.show_normals(points, normals, title="After Normals")
@@ -265,32 +266,20 @@ class MakeSurface:
             else:
                 plt.show()
 
-        """mesh作成"""
-        # 新しい法線ベクトルの代入
-        point_cloud.normals = o3d.utility.Vector3dVector(normals)
-
-        # 近傍距離を計算
-        distances = point_cloud.compute_nearest_neighbor_distance()
+        """メッシュ作成"""
+        point_cloud.normals = o3d.utility.Vector3dVector(normals)  # TODO
 
         # 法線の表示
         if Param.show_normal and develop:
-            # draw_geometriesで表示
             o3d.visualization.draw_geometries(
                 [point_cloud], point_show_normal=True)
 
-        # 近傍距離の平均
-        avg_dist = np.mean(distances)
-
-        # 半径
-        radius = 2*avg_dist
-
-        # [半径,直径]
-        radii = [radius, radius * 2]
-
-        # o3d.utility.DoubleVector:numpy配列をopen3D形式に変換
-        radii = o3d.utility.DoubleVector(radii)
-
         # 三角形メッシュを計算する
+        distances = point_cloud.compute_nearest_neighbor_distance()  # 近傍距離を計算
+        avg_dist = np.mean(distances)  # 近傍距離の平均
+        radius = 2*avg_dist  # 半径
+        radii = [radius, radius * 2]  # [半径,直径]
+        radii = o3d.utility.DoubleVector(radii)  # numpy配列 >> open3D形式
         recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
             point_cloud, radii)
 
@@ -302,9 +291,9 @@ class MakeSurface:
             o3d.visualization.draw_geometries([recMeshBPA])
 
         # 生成したメッシュをPLYファイルに保存
-        o3d.io.write_triangle_mesh(save_ply_path, recMeshBPA)
+        o3d.io.write_triangle_mesh(save_mesh_path, recMeshBPA)
 
-        return save_ply_path
+        return save_mesh_path
 
 
 if __name__ == "__main__":
@@ -323,34 +312,42 @@ if __name__ == "__main__":
     PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
     WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
-    massages = []
-    massages.append(f"SCRIPT_DIR_PATH  : {SCRIPT_DIR_PATH}")
-    massages.append(f"PROJECT_DIR_PATH : {PROJECT_DIR_PATH}")
-    massages.append(f"WORK_DIR_PATH    : {WORK_DIR_PATH}")
+    import argparse
+    parser = argparse.ArgumentParser(description='コマンドライン引数の説明')
+    parser.add_argument('--catecory_number', type=str,
+                        default="0", help='オプション引数')
+    args = parser.parse_args()
 
-    max_length = max(len(massage) for massage in massages)
-    line = "_" * max_length
+    import json
+    category_file = os.path.join(SCRIPT_DIR_PATH, "category.json")
+    with open(category_file) as fp:
+        category_data = json.load(fp)
 
-    # 設定の出力
-    # print(line)
-    # for massage in massages:
-    #     print(massage)
-    # print(line)
+    category_name = category_data[str(args.catecory_number)]
 
-    image_name = "airplane.npy"
-    image_name = "two_wings_1.npy"
-    # image_name = "two_wings_2.npy"
-    # image_name = "fighter.npy"
-    # image_name = "jet.npy"
-    # image_name = "plane.npy"
+    if args.catecory_number == "0":
+        image_list = ["airplane.npy", "two_wings_1.npy", "two_wings_2.npy",
+                      "fighter.npy", "jet.npy", "plane.npy"]
+        image_name = image_list[0]
+    if args.catecory_number == "1":
+        image_list = ["chair_00.npy", "chair_01.npy", "chair_02.npy",
+                      "chair_03.npy", "chair_04.npy", "chair_05.npy"]
+        image_name = image_list[0]
 
-    ms = MakeSurface(point_dir=os.path.join(WORK_DIR_PATH, "predict_points"),
+    ms = MakeSurface(point_dir=os.path.join(WORK_DIR_PATH, "predict_points", category_name),
                      ply_save_dir=WORK_DIR_PATH)
+    
+    ms.log.add(title="Category", log=category_name)
 
-    ms.main(image_name)
+    try:
+        ms.main(point_file_name=image_name,
+                category=args.catecory_number,
+                develop=True)
+        execute_time = time.time() - start
+        ms.log.add(title="Execution time", log=str(execute_time)[:5]+"s")
+    finally:
+        ms.log.show()
 
     # 処理時間計測用
-    execute_time = time.time() - start
-    print(f"実行時間: {str(execute_time)[:5]}s")
 
     print("終了")

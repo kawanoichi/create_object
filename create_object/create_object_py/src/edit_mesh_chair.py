@@ -1,4 +1,4 @@
-class EditMeshTable:
+class EditMeshChair:
     def __init__(self, vectors_26):
         self.vectors_26 = vectors_26
 
