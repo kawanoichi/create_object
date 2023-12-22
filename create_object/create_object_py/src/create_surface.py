@@ -18,13 +18,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
+WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
+
 
 class MakeSurface:
     """点群から表面を作りplyファイルに保存するクラス."""
 
-    def __init__(self,
-                 point_dir,
-                 ply_save_dir) -> None:
+    def __init__(self, point_dir, ply_save_dir,
+                 vectors_26_path=os.path.join(SCRIPT_DIR_PATH, "vector26.npy")) -> None:
         """コンストラクタ.
 
         Args:
@@ -49,7 +52,8 @@ class MakeSurface:
         self.graph_num = 1  # 横
 
         # 26方位ベクトルの作成([x, y, z])
-        self.vectors_26 = self.vector_26()
+        self.check_exist(vectors_26_path)
+        self.vectors_26 = np.load(vectors_26_path)
 
         # 26方位に当てはまった各ベクトルの個数
         self.count_vector_class = None
@@ -68,24 +72,7 @@ class MakeSurface:
     def check_exist(path):
         """ファイル, ディレクトリの存在確認を行う関数."""
         if not os.path.exists(path):
-            raise Exception(f"Error :Not exist '{path}'")
-
-    def vector_26(self):
-        """26方位ベクトル作成関数."""
-        kinds_of_coodinate = [-1, 0, 1]
-
-        # 26方位のベクトル(終点座標)を作成
-        vectors_26 = np.array([])
-        for x in kinds_of_coodinate:
-            for y in kinds_of_coodinate:
-                for z in kinds_of_coodinate:
-                    if not x == y == z == 0:
-                        append_coordinate = np.array([x, y, z])
-                        vectors_26 = np.append(
-                            vectors_26, append_coordinate, axis=0)
-        vectors_26 = vectors_26.reshape(
-            (len(kinds_of_coodinate) ^ 3)-1, 3)
-        return vectors_26
+            raise Exception(f"Error :No such file or directory: '{path}'")
 
     def show_point(self, points, title="None") -> None:
         """点群を表示する関数.
@@ -231,7 +218,7 @@ class MakeSurface:
         )
         # 法線ベクトルの編集(numpy配列に変換)
         normals = np.asarray(point_cloud.normals)
-        self.show_normals(points, normals, title="Normals")  # グラフの追加
+        # self.show_normals(points, normals, title="Normals")  # グラフの追加
 
         """法線ベクトルの編集"""
         if (Param.edit_normal and develop) or execute_web:
@@ -248,15 +235,23 @@ class MakeSurface:
             else:
                 raise Exception("Category Error")
 
-            edited_normals, wing_points = \
+            edited_normals, wing_points, correct_point = \
                 edit.edit_normal(points, normals)
+
             if edited_normals is not None:
+                self.log.add(title="Correct Normals", log="True")
                 normals = edited_normals
-            if wing_points is not None:
-                self.show_point_2D(wing_points, title="2D")
+            else:
+                self.log.add(title="Correct Normals", log="False")
+
+            if Param.work_process:
+                if wing_points is not None:
+                    self.show_point_2D(wing_points, title="2D")
+                if correct_point is not None:
+                    self.show_point(correct_point, title="Correct Point")
 
         # 編集後の法線ベクトルを表示
-        self.show_normals(points, normals, title="After Normals")
+        # self.show_normals(points, normals, title="After Normals")
 
         # 点群や法線ベクトルの表示
         if Param.work_process and develop:
@@ -308,9 +303,6 @@ if __name__ == "__main__":
 
     import time
     start = time.time()
-    SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
-    PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
-    WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
     import argparse
     parser = argparse.ArgumentParser(description='コマンドライン引数の説明')

@@ -31,20 +31,20 @@ class EditMeshChair:
             (self.vectors_26 == self.front_vector).all(axis=1))[0]
         self.back_vector_index = np.where(
             (self.vectors_26 == (self.front_vector * -1)).all(axis=1))[0]
-        
+
         # オブジェクトの上方向
         self.upper_vector = np.array([0, 1, 0])
         self.upper_vector_index = np.where(
             (self.vectors_26 == self.upper_vector).all(axis=1))[0]
         self.lower_vector_index = np.where(
             (self.vectors_26 == (self.upper_vector * -1)).all(axis=1))[0]
-        
+
         # オブジェクトの右方向
         self.right_vector = np.array([1, 0, 0])
         self.right_vector_index = np.where(
-            (self.vectors_26 == self.right_vector).all(axis=1))[0]
+            (self.vectors_26 == self.right_vector).all(axis=1))[0][0]
         self.left_vector_index = np.where(
-            (self.vectors_26 == (self.right_vector * -1)).all(axis=1))[0]
+            (self.vectors_26 == (self.right_vector * -1)).all(axis=1))[0][0]
 
     def correct_direct_outside(self, points, normals, vector_index_list, coordi_index: int):
         """法線ベクトルを外側に向ける関数.
@@ -60,12 +60,12 @@ class EditMeshChair:
             condition2 = self.left_vector_index
         # 上下
         elif coordi_index == Coordinate.Y.value:
-            condition1 = self.right_vector_index
-            condition2 = self.left_vector_index
+            condition1 = self.upper_vector_index
+            condition2 = self.lower_vector_index
         # 前後
         elif coordi_index == Coordinate.Z.value:
-            condition1 = self.right_vector_index
-            condition2 = self.left_vector_index
+            condition1 = self.front_vector_index
+            condition2 = self.back_vector_index
         else:
             raise ()
 
@@ -81,11 +81,13 @@ class EditMeshChair:
         for index in target_index:
             if points[index, coordi_index] > 0 and \
                     normals[index, coordi_index] < 0:
-                normals[index, coordi_index] *= -1
+                # normals[index, coordi_index] *= -1
+                normals[index] *= -1
                 count += 1
             if points[index, coordi_index] < 0 and \
                     normals[index, coordi_index] > 0:
-                normals[index, coordi_index] *= -1
+                # normals[index, coordi_index] *= -1
+                normals[index] *= -1
                 count += 1
         self.log.add(title=f"direct {coordi_index} outside count", log=count)
         return normals
@@ -126,42 +128,45 @@ class EditMeshChair:
         # 点群の原点を画像の中心に合わせる
         points += int(img_size/2)
 
-
         # NOTE: img[y,x]に注意
         # 側面画像
         correct_value = 2
         if coordi_index == Coordinate.X.value:
             for point, vec_index in zip(points, vector_index_list):
                 if vec_index == self.right_vector_index or \
-                    vec_index == self.left_vector_index:
+                        vec_index == self.left_vector_index:
                     continue
                 _, y, z = point
+                # 点を描画
                 img[y-correct_value:y+correct_value,
                     z-correct_value:z+correct_value] = [0, 0, 0]
-            img_name = "beside.png"
+            img_name = "beside_yz.png"
         # 上面画像
         elif coordi_index == Coordinate.Y.value:
             for point, vec_index in zip(points, vector_index_list):
                 if vec_index == self.upper_vector_index or \
-                    vec_index == self.lower_vector_index:
+                        vec_index == self.lower_vector_index:
                     continue
                 x, _, z = point
+                # 点を描画
                 img[z-correct_value:z+correct_value,
                     x-correct_value:x+correct_value] = [0, 0, 0]
-            img_name = "upper.png"
+            img_name = "upper_zx.png"
         # 正面画像
         elif coordi_index == Coordinate.Z.value:
             for point, vec_index in zip(points, vector_index_list):
                 if vec_index == self.front_vector_index or \
-                    vec_index == self.back_vector_index:
+                        vec_index == self.back_vector_index:
                     continue
                 x, y, _ = point
+                # 点を描画
                 img[y-correct_value:y+correct_value,
                     x-correct_value:x+correct_value] = [0, 0, 0]
-            img_name = "front.png"
+            img_name = "front_yx.png"
         else:
             raise ()
 
+        self.log.add(title="Line Image Name", log=img_name)
         if Param.work_process and Param.output_image and self.develop:
             cv2.imwrite(os.path.join(WORK_DIR_PATH, img_name), img)
 
@@ -228,8 +233,7 @@ class EditMeshChair:
 
         diff_a_thre = 20  # 傾き(度数法)の閾値
         diff_coordi_thre = int(img.shape[0] / 50)  # x1座標の閾値
-        dis_thre = 20 # 直線と点の距離の閾値
-        print(f"diff_coordi_thre:{diff_coordi_thre}")
+        dis_thre = 20  # 直線と点の距離の閾値
         for i, line in enumerate(lines):
             if i == 0:
                 pre_line = line
@@ -246,9 +250,9 @@ class EditMeshChair:
                 else:
                     pre_line = line
             # ラインが水平か垂直かで分類
-            if Calculator.calculate_slope(line) > 45: # 縦
+            if Calculator.calculate_slope(line) > 45:  # 縦
                 vertical_line_index.append(i)
-            else: # 横
+            else:  # 横
                 horizontal_line_index.append(i)
 
         # ラインの削除
@@ -262,58 +266,93 @@ class EditMeshChair:
         if Param.work_process and Param.output_image and self.develop:
             # 結果を表示
             detect_line_img = img.copy()
-            colors = cycle([(0, 0, 255), (0, 255, 0), (255, 0, 0)])  # (B, G, R)
+            colors = cycle([(0, 0, 255), (0, 255, 0),
+                           (255, 0, 0)])  # (B, G, R)
             for line in lines:
-            # for line in vertical_line:
-            # for line in horizontal_line:
                 x1, y1, x2, y2 = line
                 color = next(colors)
                 cv2.line(detect_line_img, (x1, y1), (x2, y2), color, 5)
             # x1の閾値の幅の確認
             detect_line_img[:, 50:52] = [0, 0, 255]
-            detect_line_img[:, 50+diff_coordi_thre:52+diff_coordi_thre] = [0, 0, 255]
+            detect_line_img[:, 50+diff_coordi_thre:52 +
+                            diff_coordi_thre] = [0, 0, 255]
             cv2.imwrite(os.path.join(WORK_DIR_PATH,
                         'detect_line2.png'), detect_line_img)
 
         return lines, vertical_line, horizontal_line
 
-    def inversion_normal(self, points, normals, lines, vector_index_list, normal_vector):
-        """aaa"""
-        if lines.shape[0] % 2 != 0:
-            return None
-        
-        if normal_vector == Coordinate.X.value:
-            lines = lines[np.argsort(lines[:, 0])]
-        if normal_vector == Coordinate.Y.value:
-            lines = lines[np.argsort(lines[:, 1])]
+    def reverse_vector(self, normal, vector_26_index):
+        try:
+            vector = self.vectors_26[vector_26_index]
+            # vector = self.vectors_26[int(vector_26_index)]
+            reversed_vector = normal.copy()
+            for i, element in enumerate(vector):
+                if element != 0 :
+                    reversed_vector[i] *= -1
+        except Exception as e:
+            print(e)
+            print(f"normal: {normal}")
+            print(f"vector_26_index: {vector_26_index}")
+            exit()
 
-        # TODO: diff_coordi_thre = int(img.shape[0] / 50) から持ってきたけどどうやって共有する？
-        count_a = 0 
-        count_b = 0 
-        
+        return reversed_vector
+
+    def inversion_normal(self, points, normals, lines, vector_index_list, face_axis):
+        """面(線)の本数によって法線ベクトルを修正.
+        Args:
+            lines: 面を表す線
+            vector_index_list: 26方位に分類したときのindexを格納した配列
+            face_axis: 面面を表す法線ベクトルの座標系 ※0(x) or 1(y) or 2(z)
+        """
+        if lines.shape[0] % 2 != 0:
+            self.log.add(title="Invert Normal Executed", log="False")
+            return None, None
+
+        lines = lines[np.argsort(lines[:, 0])]
+        if face_axis == Coordinate.X.value:
+            raise ()
+
+        if face_axis == Coordinate.Y.value:
+            line_axis = 1  # 画像上x座標が小さい方向ベクトル x or y (0 or 1)
+            target_posi_vec_index = np.where(
+                self.vectors_26[:, face_axis] == 1)[0]
+            target_nega_vec_index = np.where(
+                self.vectors_26[:, face_axis] == -1)[0]
+
+        # 物体に対して前方後方向きのベクトルについて考える
+        if face_axis == Coordinate.Z.value:
+            line_axis = 0  # 画像上x座標が小さい方向ベクトル x or y (0 or 1)
+            target_posi_vec_index = np.where(
+                self.vectors_26[:, face_axis] == 1)[0]
+            target_nega_vec_index = np.where(
+                self.vectors_26[:, face_axis] == -1)[0]
+
+        lines = lines[np.argsort(lines[:, line_axis])]
+
+        correct_normal_index = []
+        # 閾値は実際にやってうまく言った数値
         diff_coordi_thre = 20
         for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
-            if vec_index != self.right_vector_index and \
-                vec_index != self.left_vector_index:
-                continue
-            p_x, p_y, p_z = point
-            for j, line in enumerate(lines):
-                l_x, _, _, _ = line
-                if abs(p_x - l_x) < diff_coordi_thre:
-                    count_a += 1
-                    if j % 2 == 0:
-                        if vec_index == self.left_vector_index:
-                            count_a += 1
-                            normals[i, normal_vector] *= -1
-                    else:
-                        # if normals[i] != (self.right_vector):
-                        if vec_index == self.right_vector_index:
-                            count_b += 1
-                            normals[i, normal_vector] *= -1
+            # 対象としている法線ベクトルの場合
+            if np.any(target_posi_vec_index == vec_index) or np.any(target_nega_vec_index == vec_index):
+                # 各ラインについて見ていく
+                for j, line in enumerate(lines):
+                    # ラインに点が近いか、判別
+                    if abs(point[face_axis] - line[line_axis]) < diff_coordi_thre:
+                        # 偶数本の場合
+                        if j % 2 == 0:
+                            if np.any(target_posi_vec_index == vec_index):
+                                normals[i] = \
+                                    self.reverse_vector(normals[i], vec_index)
+                        # 奇数本の場合
+                        elif any(target_nega_vec_index == vec_index):
+                            correct_normal_index.append(i)
+                            normals[i] = \
+                                self.reverse_vector(normals[i], vec_index)
 
-        print(f"count_a: {count_a}, count_b: {count_b}")
-        return normals
-    
+        self.log.add(title="Invert Normal Executed", log="True")
+        return normals, correct_normal_index
+
     def edit_normal(self, points: np.ndarray, normals=None) -> None:
         """法線ベクトルを修正する関数.
         Args:
@@ -326,35 +365,64 @@ class EditMeshChair:
 
         """点群を法線の向きでグループ分け"""
         # vector_index_list: 法線が'self.vectors_26'の中で一番近いベクトルのインデックスを格納
-        vector_index_list = np.zeros(normals.shape[0])  # (2048,)
+        vector_index_list = np.zeros(normals.shape[0], dtype=int)  # (2048,)
+        count_list = np.zeros(self.vectors_26.shape[0], dtype=int)  # 確認用
         for i, normal in enumerate(normals):
             min_theta = 180  # 比較するためのなす角
+            min_index = 0  # 確認用
             for j, vector26 in enumerate(self.vectors_26):
                 angle = int(Calculator.angle_between_vectors(normal, vector26))
                 if angle < min_theta:
                     vector_index_list[i] = j
                     min_theta = angle
+                    min_index = j  # 確認用
+            count_list[min_index] += 1  # 確認用
+
+        # 確認用
+        # for i, count in enumerate(count_list):
+        #     print(f"{i}: {count}")
 
         """椅子の側面を修正"""
+
+        # """
         # 左右方向の法線ベクトルを修正
         correct_normals = self.correct_direct_outside(
             points, normals, vector_index_list, coordi_index=Coordinate.X.value)
+        correct_normals = self.correct_direct_outside(
+            points, correct_normals, vector_index_list, coordi_index=Coordinate.Y.value)
         if correct_normals is not None:
             normals = correct_normals
+        # """
 
         """椅子の面を見つけて編集する"""
+
+        correct_point = None
+        # """
+        # 側面の画像を描画する
         img = self.draw_point_cloud_axes(
             work_points, vector_index_list, coordi_index=Coordinate.X.value)
-        # img = self.draw_point_cloud_axes(
-        #     work_points, vector_index_list, coordi_index=Coordinate.Y.value)
-        # img = self.draw_point_cloud_axes(
-        #     work_points, vector_index_list, coordi_index=Coordinate.Z.value)
-
-        lines, vertical_line, horizontal_line = self.detect_line(img, coordi_index=Coordinate.X.value)
         
-        # 側面方向に見ていく
-        normals = self.inversion_normal(work_points, normals, vertical_line,
-                              vector_index_list, normal_vector=Coordinate.X.value)
+        # 側面から線(面)を出力する
+        lines, vertical_line, horizontal_line = self.detect_line(
+            img, coordi_index=Coordinate.X.value)
+        
+        # 側面方向に見ていく(椅子の背もたれの面のベクトル方向はZ)
+        correct_normals, correct_normal_index = self.inversion_normal(
+            work_points, normals, vertical_line, vector_index_list, face_axis=Coordinate.Z.value)
+        if correct_normals is None:
+            return normals, None, None
+        else:
+            normals =  correct_normals
 
+        # 椅子の座る部分の面を見つけて法線ベクトルの補正を加える
+        correct_normals, correct_normal_index = self.inversion_normal(
+            work_points, normals, horizontal_line, vector_index_list, face_axis=Coordinate.Y.value)
+        # if correct_normals is None:
+        #     return normals, None, None
+        # else:
+        #     normals =  correct_normals
 
-        return normals, None
+        if correct_normal_index is not None:
+            correct_point = points[correct_normal_index]
+        
+        return normals, None, correct_point
