@@ -301,4 +301,4 @@ class EditMeshAirplane:
             normals = self.edit_normal_pattern2(points, normals)
             normals = self.edit_normal_pattern1(points, normals, wing_line)
 
-        return normals, wing_points
+        return normals, wing_points, None

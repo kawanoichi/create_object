@@ -23,7 +23,7 @@ class Param:
     output_image = True
 
     # meshなしplyファイルを作成するか
-    # point_only = True
+    point_only = True
 
     # 法線ベクトルの表示
     # show_normal = True

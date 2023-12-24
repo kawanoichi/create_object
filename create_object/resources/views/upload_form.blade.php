@@ -6,7 +6,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- 文字コード -->
     <meta charset="UTF-8">
+    <!-- 自動更新 -->
+    <meta http-equiv="refresh" content="5"> 
     <!-- 異なるデバイスの画面サイズに適応 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- 外部CSSの読み込み -->
@@ -16,28 +19,24 @@
 
 <body>
     <!-- Header -->
-    <div calss="header">
-        <h1>Header</h1>
-        <p>aa</p>
+    <div class="header">
+        <h1>３Ⅾオブジェクト生成ツール</h1>
     </div>
     
     <!-- Main -->
     <div calss="main">
-        <h1>
-            Main
-        </h1>
-        
-        <!-- jsonファイルのデータを出力 -->
-        <!-- <div id="jsonValues"></div> -->
-    
         <div class = "upload">
-            <h2>Image Upload</h2>
+            <h1>画像アップロード</h1>
             <form method="post" action="/upload" enctype="multipart/form-data">
                 @csrf
                 <!-- 画像のアップロードボタン -->
-                <input type="file" name="image" accept="image/*">
+                <label for="inputImage" class="custom-image-input">
+                    画像ファイルを選択
+                </label>
+                <input type="file" id="inputImage" name="image" accept="image/*">
                 <br>
                 
+                <h2>オブジェクトのカテゴリを選択してください</h2>
                 <!-- ラジオボタン -->
                 <input type="radio" name="selectCategory" value="0"> Airplane
                 <br>
@@ -45,7 +44,6 @@
                 <br>
                 <input type="radio" name="selectCategory" value="2"> Chair
                 <br>
-                
                 <button type="submit">アップロード</button>
             </form>
         </div>
@@ -54,6 +52,8 @@
     <!-- Footer -->
     <div calss="footer">
         <h1>Footer</h1>
+        <p>aaa</p>
     </div>
 </body>
 </html>
+
