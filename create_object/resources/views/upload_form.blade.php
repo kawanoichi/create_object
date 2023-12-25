@@ -25,11 +25,12 @@
     
     <!-- Main -->
     <div calss="main">
+        <h1> Main </h1>
         <div class = "upload">
             <h1>画像アップロード</h1>
             <form method="post" action="/upload" enctype="multipart/form-data">
-                @csrf
                 <!-- 画像のアップロードボタン -->
+                @csrf
                 <label for="inputImage" class="custom-image-input">
                     画像ファイルを選択
                 </label>

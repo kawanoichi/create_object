@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+from enum import Enum
 
 from param_create_surface import Param
 
@@ -9,6 +10,11 @@ SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
 WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
+class Coordinate(Enum):
+    """座標クラス."""
+    X = 0
+    Y = 1
+    Z = 2
 
 class EditMeshAirplane:
     def __init__(self, vectors_26, develop=False, log=None):
@@ -27,6 +33,15 @@ class EditMeshAirplane:
         self.lower_vector = np.array([0, -1, 0])
         self.lower_vector_index = np.where(
             (self.vectors_26 == self.lower_vector).all(axis=1))[0]
+
+
+        # オブジェクトの右方向
+        self.right_vector = np.array([1, 0, 0])
+        self.right_vector_index = np.where(
+            (self.vectors_26 == self.right_vector).all(axis=1))[0][0]
+        self.left_vector_index = np.where(
+            (self.vectors_26 == (self.right_vector * -1)).all(axis=1))[0][0]
+
 
     @staticmethod
     def draw_line(img, theta, rho):
@@ -249,6 +264,53 @@ class EditMeshAirplane:
                 normals[i, 2] *= -1
         return normals
 
+    def correct_direct_outside(self, points, normals, vector_index_list, coordi_index: int):
+        """法線ベクトルを外側に向ける関数.
+        Args:
+            points: 点群座標
+            normals: 法線ベクトル
+            vector_index_list: 26方位のベクトルを比較
+            coordi_index: 外側に向ける座標軸
+        """
+        # 左右
+        if coordi_index == Coordinate.X.value:
+            condition1 = self.right_vector_index
+            condition2 = self.left_vector_index
+        # 上下
+        elif coordi_index == Coordinate.Y.value:
+            condition1 = self.upper_vector_index
+            condition2 = self.lower_vector_index
+        # 前後
+        elif coordi_index == Coordinate.Z.value:
+            condition1 = self.front_vector_index
+            condition2 = self.back_vector_index
+        else:
+            raise ()
+
+        target_index = np.where(
+            (vector_index_list == condition1) |
+            (vector_index_list == condition2))[0]
+
+        if len(target_index) == 0:
+            return None
+
+        # ベクトルの向きと座標の符号を比較し、修正
+        count = 0
+        for index in target_index:
+            if points[index, coordi_index] > 0 and \
+                    normals[index, coordi_index] < 0:
+                # normals[index, coordi_index] *= -1
+                normals[index] *= -1
+                count += 1
+            if points[index, coordi_index] < 0 and \
+                    normals[index, coordi_index] > 0:
+                # normals[index, coordi_index] *= -1
+                normals[index] *= -1
+                count += 1
+        self.log.add(title=f"direct {coordi_index} outside count", log=count)
+        return normals
+
+
     def edit_normal(self, points: np.ndarray, normals=None) -> None:
         """法線ベクトルに関連する関数.
 
@@ -291,6 +353,7 @@ class EditMeshAirplane:
             self.log.add(title="Correction", log="pattern2")
             normals = self.edit_normal_pattern2(points, normals)
 
+        # """
         # ラインが見つかった場合は、パターン１
         elif wing_line.shape[0] % 2 == 0:
             self.log.add(title="Correction", log="pattern1")
@@ -298,7 +361,11 @@ class EditMeshAirplane:
             # (ラインの本数, 1, 2) >> (ラインの本数, 2)
             # wing_line = wing_line[:, 0, :]
             # 羽を表す点群の面が偶数枚ある場合、法線ベクトルの向きを交互にする
-            normals = self.edit_normal_pattern2(points, normals)
-            normals = self.edit_normal_pattern1(points, normals, wing_line)
+            # normals = self.edit_normal_pattern2(points, normals)
+            # normals = self.edit_normal_pattern1(points, normals, wing_line)
 
+            normals = self.correct_direct_outside(
+                points, normals, self.groupe, coordi_index=Coordinate.X.value)
+
+        # """
         return normals, wing_points, None

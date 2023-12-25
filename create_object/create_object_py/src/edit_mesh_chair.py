@@ -412,7 +412,7 @@ class EditMeshChair:
         if correct_normals is None:
             return normals, None, None
         else:
-            normals =  correct_normals
+            normals = correct_normals
 
         # 椅子の座る部分の面を見つけて法線ベクトルの補正を加える
         correct_normals, correct_normal_index = self.inversion_normal(

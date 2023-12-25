@@ -93,9 +93,10 @@ class MakeSurface:
         self.graph_num += 1
         plt.title(title)
         ax.set(xlabel='x', ylabel='y', zlabel='z')
-        colors1 = np.where(points[:, 0] > 0, 'red', 'blue')
-        colors2 = np.where(points[:, 0] > 0, 'purple', 'green')
-        colors = np.where(points[:, 1] > 0, colors1, colors2)
+        colors = np.where(points[:, 0] > 0, 'red', 'blue')
+        # colors1 = np.where(points[:, 0] > 0, 'red', 'blue')
+        # colors2 = np.where(points[:, 0] > 0, 'purple', 'green')
+        # colors = np.where(points[:, 1] > 0, colors1, colors2)
         ax.scatter(points[:, 0],
                    points[:, 1],
                    points[:, 2],
@@ -185,10 +186,11 @@ class MakeSurface:
         point_path = os.path.join(self.point_dir, point_file_name)
         self.check_exist(point_path)
 
-        # 保存PLYパス
+        # 保存PLY(point)パス
         ply_file_name = os.path.splitext(point_file_name)[0] + "_point.ply"
         save_point_path = os.path.join(self.ply_save_dir, ply_file_name)
 
+        # 保存PLY(mesh)パス
         ply_file_name = os.path.splitext(point_file_name)[0] + ".ply"
         save_mesh_path = os.path.join(self.ply_save_dir, ply_file_name)
 
@@ -207,14 +209,14 @@ class MakeSurface:
         # NumPyの配列からPointCloudを作成
         point_cloud = o3d.geometry.PointCloud()
         point_cloud.points = o3d.utility.Vector3dVector(points)
-        if Param.point_only and develop:
-            o3d.io.write_point_cloud(save_point_path, point_cloud)
 
         """法線ベクトルの作成"""
         # 法線情報を計算
         point_cloud.estimate_normals(
             # search_param=o3d.geometry.KDTreeSearchParamHybrid(
-            #     radius=1, max_nn=30)
+            #     radius=1, max_nn=10)
+            search_param=o3d.geometry.KDTreeSearchParamKNN(
+                knn=20)
         )
         # 法線ベクトルの編集(numpy配列に変換)
         normals = np.asarray(point_cloud.normals)
@@ -252,44 +254,59 @@ class MakeSurface:
 
         # 編集後の法線ベクトルを表示
         # self.show_normals(points, normals, title="After Normals")
-
-        # 点群や法線ベクトルの表示
-        if Param.work_process and develop:
-            if Param.output_image:
-                save_path = os.path.join(WORK_DIR_PATH, 'result.png')
-                plt.savefig(save_path)
-            else:
-                plt.show()
+        # 法線ベクトルの更新
+        point_cloud.normals = o3d.utility.Vector3dVector(normals)
 
         """メッシュ作成"""
-        point_cloud.normals = o3d.utility.Vector3dVector(normals)  # TODO
-
-        # 法線の表示
-        if Param.show_normal and develop:
-            o3d.visualization.draw_geometries(
-                [point_cloud], point_show_normal=True)
-
         # 三角形メッシュを計算する
-        distances = point_cloud.compute_nearest_neighbor_distance()  # 近傍距離を計算
-        avg_dist = np.mean(distances)  # 近傍距離の平均
-        radius = 2*avg_dist  # 半径
-        radii = [radius, radius * 2]  # [半径,直径]
-        radii = o3d.utility.DoubleVector(radii)  # numpy配列 >> open3D形式
-        recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
-            point_cloud, radii)
-
-        # geometry.Geometry オブジェクトのリストを描画する関数(meshの表示)
-        if Param.show_mesh and develop:
-            # x: 右方向
-            # y: 上
-            # z: 手前
-            o3d.visualization.draw_geometries([recMeshBPA])
-
+        if Param.before_ver:
+            # 過去バージョン
+            distances = point_cloud.compute_nearest_neighbor_distance()  # 近傍距離を計算
+            avg_dist = np.mean(distances)  # 近傍距離の平均
+            radius = 2*avg_dist  # 半径
+            # radii = [radius, radius * 2]  # [半径,直径]
+            radii = [radius, radius * 1.5, radius * 2]  # [半径,直径]
+            print(f"radii: {radii}")
+            radii = o3d.utility.DoubleVector(radii)  # numpy配列 >> open3D形式
+            recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
+                point_cloud, radii)
+        else:
+            # 新しいバージョン
+            # 点群のベクトル方向群を正規化する（点に方向はないので）
+            point_cloud.orient_normals_consistent_tangent_plane(10)
+                
+            # "ball pivoting"法で表面を構築
+            distances = point_cloud.compute_nearest_neighbor_distance()
+            avg_dist = np.mean(distances)
+            radius = 2*avg_dist   
+            radii = [radius, radius * 2]
+            # radii = [radius*0.8, radius, radius*1.5, radius * 2, radius * 2.5]
+            recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
+                        point_cloud, o3d.utility.DoubleVector(radii))
+        
         # 生成したメッシュをPLYファイルに保存
         o3d.io.write_triangle_mesh(save_mesh_path, recMeshBPA)
+        
+        
+        """開発用"""
+        if develop:
+            # 点群ファイルの保存
+            if Param.point_only:
+                o3d.io.write_point_cloud(save_point_path, point_cloud)
+
+            # 点群や法線ベクトルの表示
+            if Param.work_process:
+                plt.savefig(os.path.join(WORK_DIR_PATH, 'result.png')) \
+                    if Param.output_image else plt.show()
+            # 法線の表示
+            if Param.show_normal:
+                o3d.visualization.draw_geometries(
+                    [point_cloud], point_show_normal=True)
+            # メッシュの表示
+            if Param.show_mesh:
+                o3d.visualization.draw_geometries([recMeshBPA])
 
         return save_mesh_path
-
 
 if __name__ == "__main__":
     import matplotlib

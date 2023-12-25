@@ -1,53 +1,68 @@
 body {
-    /* display: flex; */
-    justify-content: center;
+    /* 位置 */
+    display: block;
     align-items: center;
-    background-color: rgba(245, 245, 245, 0.986);
-    font-family: 'Courier New', Courier, monospace;
-}
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    /* padding: 0; */
 
+    /* 色やフォント */
+    font-family: Georgia, serif;
+    background-color: rgba(245, 245, 245, 0.986);
+}
+div {
+    border: 2px solid #000000;
+}
 h1, p {
     color: blue;
 }
 
+/* HEADER */
 .header {
+    /* 位置 */
+    display:block;
     /* 横並びにする */
+    top: 0px;
     width: 100%;
     height: 50px;
-    vertical-align: middle;
     background-color: rgba(255, 255, 255, 0.986);
-    /* box-shadow: 0px 2px 5px 2px rgba(0, 0, 0, 0.3); */
     margin: 0;
-    /* align-items: center; */
 }
 .header h1 {
     font-size: 20px;
+    line-height:50px;
 }
 
+/* MAIN */
+.main {
+    height: 500px;
+    background-color: orange;
+}
+
+.custom-image-input {
+    /* display: inline-block; */
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+}
+label {
+    text-align: center;
+}
 .upload h1, h2, p{
     text-align: center;
     font-size: 20px;
 }
-
-.custom-image-input {
-    display: flex;
-    justify-content: center;
-    /* margin: 0 auto; */
-    display: inline-block;
-    padding: 20px 80px;
-    font-size: 30px;
-    /* font-weight: bold; */
-    color: #fff;
-    background-color: #4CAF50;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-/* ファイル入力を非表示にする */
 input[type="file"] {
+    /* ファイル入力を非表示にする */
     display: none;
 }
 
+/* HOOTER */
 .footer {
     font-size: 20px;
 }

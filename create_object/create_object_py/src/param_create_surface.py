@@ -12,6 +12,8 @@ class Param:
     show_normal = False
     show_mesh = False
 
+    before_ver = False
+    
     """
     以下切り替え用
     """
@@ -23,10 +25,12 @@ class Param:
     output_image = True
 
     # meshなしplyファイルを作成するか
-    point_only = True
+    # point_only = True
 
     # 法線ベクトルの表示
-    # show_normal = True
+    show_normal = True
 
     # meshの表示
-    # show_mesh = True
+    show_mesh = True
+
+    before_ver = True
