@@ -1,68 +1,73 @@
 body {
-    /* 位置 */
-    display: block;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-    /* padding: 0; */
-
-    /* 色やフォント */
     font-family: Georgia, serif;
-    background-color: rgba(245, 245, 245, 0.986);
+    background-color: lightgreen;
 }
 div {
-    border: 2px solid #000000;
-}
-h1, p {
-    color: blue;
+    display: flex;
+    justify-content: center; /* 要素(文字等)を中心に*/
+    border: 3px solid black;
 }
 
-/* HEADER */
+/* ------------------ HEADER -------------------- */
 .header {
-    /* 位置 */
-    display:block;
-    /* 横並びにする */
-    top: 0px;
+    height: 60px;
     width: 100%;
-    height: 50px;
     background-color: rgba(255, 255, 255, 0.986);
-    margin: 0;
+    justify-content: left;
 }
+
 .header h1 {
     font-size: 20px;
-    line-height:50px;
 }
 
-/* MAIN */
+/* ------------------  MAIN  -------------------- */
 .main {
-    height: 500px;
-    background-color: orange;
-}
+    height: 700px;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    background-color: lightblue;
+} 
 
-.custom-image-input {
-    /* display: inline-block; */
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    background-color: #3498db;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
+#clock {
+    width: 40%;
+    font-size: 50px;
+    background-color: lightcoral;
+    
 }
-label {
-    text-align: center;
+.upload{ /* form */ 
+    display: flex;
+    justify-content: center; /* 要素(文字等)を中心に*/
+
+    flex-direction: column;
+    align-items: center;
+    width: 50%;
+    background-color: lightgoldenrodyellow;
 }
-.upload h1, h2, p{
-    text-align: center;
-    font-size: 20px;
+.custom-image-input{
+    /* display: flex; */
+    height: 100px;
+    width: 300px;
+    background-color: rgb(157, 109, 235);
+    /* flex-direction: column; */
+    /* align-items: start; */
+}
+#image_button{
+    border: 10px solid black;
 }
 input[type="file"] {
     /* ファイル入力を非表示にする */
     display: none;
 }
+#radio{
+    display: inline-block;
+}
 
-/* HOOTER */
+
+/* ------------------ HOOTER -------------------- */
 .footer {
-    font-size: 20px;
+    height: 100px;
+    width: 100%;
+    font-size: 10px;
+    background-color: rgba(255, 255, 255, 0.986);
 }

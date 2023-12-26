@@ -9,7 +9,7 @@
     <!-- 文字コード -->
     <meta charset="UTF-8">
     <!-- 自動更新 -->
-    <meta http-equiv="refresh" content="5"> 
+    <meta http-equiv="refresh" content="3"> 
     <!-- 異なるデバイスの画面サイズに適応 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- 外部CSSの読み込み -->
@@ -24,37 +24,61 @@
     </div>
     
     <!-- Main -->
-    <div calss="main">
-        <h1> Main </h1>
-        <div class = "upload">
-            <h1>画像アップロード</h1>
-            <form method="post" action="/upload" enctype="multipart/form-data">
-                <!-- 画像のアップロードボタン -->
-                @csrf
-                <label for="inputImage" class="custom-image-input">
-                    画像ファイルを選択
-                </label>
-                <input type="file" id="inputImage" name="image" accept="image/*">
-                <br>
-                
-                <h2>オブジェクトのカテゴリを選択してください</h2>
-                <!-- ラジオボタン -->
-                <input type="radio" name="selectCategory" value="0"> Airplane
-                <br>
-                <input type="radio" name="selectCategory" value="1"> Table
-                <br>
-                <input type="radio" name="selectCategory" value="2"> Chair
-                <br>
-                <button type="submit">アップロード</button>
-            </form>
+    <div class="main">
+        <!-- 以下 -->
+        <div id="clock"></div>
+
+        <script>
+        function updateClock() {
+            var now = new Date();
+            var hours = now.getHours();
+            var minutes = now.getMinutes();
+            var seconds = now.getSeconds();
+
+            // ゼロパディングを追加
+            hours = hours < 10 ? '0' + hours : hours;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+
+            var timeString = hours + ':' + minutes + ':' + seconds;
+            
+            // HTML要素に挿入
+            document.getElementById('clock').innerText = timeString;
+        }
+        // 初回表示
+        updateClock();
+        </script>
+        <!-- 以上 -->
+
+        <form class = "upload" method="post" action="/upload" enctype="multipart/form-data">
+            <!-- 画像のアップロードボタン -->
+            <p>画像のアップロード</p>
+            @csrf
+            <label for="inputImage" class="custom-image-input">
+                画像ファイルを選択
+            </label>
+            <input id="image_button" type="file" id="inputImage" name="image" accept="image/*">
+            <br>
+            
+            <p>オブジェクトのカテゴリを選択してください</p>
+            <!-- ラジオボタン -->
+            <input id="radio" type="radio" name="selectCategory" value="0"> Airplane
+            <br>
+            <input id="radio" type="radio" name="selectCategory" value="1"> Table
+            <br>
+            <input id="radio" type="radio" name="selectCategory" value="2"> Chair
+            <br>
+            <button type="submit">アップロード</button>
+        </form>
+    
         </div>
     </div>
 
     <!-- Footer -->
-    <div calss="footer">
+    <div class="footer">
         <h1>Footer</h1>
-        <p>aaa</p>
     </div>
+    
 </body>
 </html>
 
