@@ -8,15 +8,18 @@ plyファイルからmeshを生成する.
 実行コマンド
 $ make surface_run
 """
-from edit_mesh_chair import EditMeshChair
-from edit_mesh_airplane import EditMeshAirplane
-from param_create_surface import Param
-from log import Log
-
 import open3d as o3d
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+
+from edit_mesh_chair import EditMeshChair
+from edit_mesh_airplane import EditMeshAirplane
+from param_create_surface import Param
+from log import Log
+from my_plt import MyPlt
+
+
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
@@ -35,6 +38,7 @@ class MakeSurface:
         """
         # ログ用
         self.log = Log()
+        self.myplt = MyPlt(max_graph_num=6)
 
         # Path
         self.point_dir = point_dir
@@ -44,12 +48,6 @@ class MakeSurface:
         self.check_exist(self.ply_save_dir)
 
         self.groupe = None
-
-        # 表示する点群(散布図)に関する変数
-        self.fig = plt.figure()  # 表示するグラフ
-        self.fig_vertical = 2  # 縦
-        self.fig_horizontal = 3  # 横
-        self.graph_num = 1  # 横
 
         # 26方位ベクトルの作成([x, y, z])
         self.check_exist(vectors_26_path)
@@ -73,79 +71,6 @@ class MakeSurface:
         """ファイル, ディレクトリの存在確認を行う関数."""
         if not os.path.exists(path):
             raise Exception(f"Error :No such file or directory: '{path}'")
-
-    def show_point(self, points, title="None") -> None:
-        """点群を表示する関数.
-        NOTE: 表示する軸方向をopen3dと統一
-            x: 右方向
-            y: 上
-            z: 手前
-        Args:
-            points(np.ndarray): 点群
-        """
-        ax = self.fig.add_subplot(self.fig_vertical,
-                                  self.fig_horizontal,
-                                  self.graph_num,
-                                  projection='3d')
-        plt.xlim(-0.3, 0.3)
-        plt.ylim(-0.3, 0.3)
-        ax.set_zlim(-0.3, 0.3)
-        self.graph_num += 1
-        plt.title(title)
-        ax.set(xlabel='x', ylabel='y', zlabel='z')
-        colors = np.where(points[:, 0] > 0, 'red', 'blue')
-        # colors1 = np.where(points[:, 0] > 0, 'red', 'blue')
-        # colors2 = np.where(points[:, 0] > 0, 'purple', 'green')
-        # colors = np.where(points[:, 1] > 0, colors1, colors2)
-        ax.scatter(points[:, 0],
-                   points[:, 1],
-                   points[:, 2],
-                   c=colors)
-
-    def show_point_2D(self, points, title="None") -> None:
-        """点群を表示する関数.
-
-        Args:
-            points(np.ndarray): 点群
-        """
-        ax = self.fig.add_subplot(self.fig_vertical,
-                                  self.fig_horizontal,
-                                  self.graph_num)
-        self.graph_num += 1
-
-        plt.title(title)
-        ax.set(xlabel='x', ylabel='y')
-
-        ax.scatter(points[:, 0],
-                   points[:, 1],
-                   c='b',
-                   s=5)
-
-    def show_normals(self, points, normals, title="None") -> None:
-        """点群と法線ベクトルを表示する関数.
-
-        Args:
-            points(np.ndarray): 点群
-        """
-        ax = self.fig.add_subplot(self.fig_vertical,
-                                  self.fig_horizontal,
-                                  self.graph_num,
-                                  projection='3d')
-        self.graph_num += 1
-
-        plt.title(title)
-        ax.set(xlabel='x', ylabel='y', zlabel='z')
-
-        # 点をプロット
-        ax.scatter(points[:, 0], points[:, 1],
-                   points[:, 2], c='b', marker='o', label='Points')
-
-        # 法線ベクトルをプロット
-        scale = 0.1  # 矢印のスケール
-        for i in range(len(points)):
-            if points[i, 0] < -0.05:  # 一部を表示
-                ax.quiver(points[i, 0], points[i, 1], points[i, 2],
-                          normals[i, 0]*scale, normals[i, 1]*scale, normals[i, 2]*scale, color='r', length=1.0, normalize=True)
 
     def rotate_object(self, points, angle, axis="x"):
         """点群を回転させる関数.
@@ -200,11 +125,11 @@ class MakeSurface:
         # 点群データの読み込み
         points = np.load(point_path)
         self.log.add(title="points.shape", log=points.shape)
-        self.show_point(points, title="Input Point")  # グラフの追加
+        self.myplt.show_point(points, title="Input Point")  # グラフの追加
 
         # オブジェクトの向きを調整
         points = self.rotate_object(points, angle=-90, axis="z")
-        self.show_point(points, title="Rotated Input Point")  # グラフに追加
+        self.myplt.show_point(points, title="Rotated Input Point")  # グラフに追加
 
         # NumPyの配列からPointCloudを作成
         point_cloud = o3d.geometry.PointCloud()
@@ -248,9 +173,9 @@ class MakeSurface:
 
             if Param.work_process:
                 if wing_points is not None:
-                    self.show_point_2D(wing_points, title="2D")
+                    self.myplt.show_point_2D(wing_points, title="2D")
                 if correct_point is not None:
-                    self.show_point(correct_point, title="Correct Point")
+                    self.myplt.show_point(correct_point, title="Correct Point")
 
         # 編集後の法線ベクトルを表示
         # self.show_normals(points, normals, title="After Normals")
@@ -266,7 +191,6 @@ class MakeSurface:
             radius = 2*avg_dist  # 半径
             # radii = [radius, radius * 2]  # [半径,直径]
             radii = [radius, radius * 1.5, radius * 2]  # [半径,直径]
-            print(f"radii: {radii}")
             radii = o3d.utility.DoubleVector(radii)  # numpy配列 >> open3D形式
             recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
                 point_cloud, radii)
@@ -297,7 +221,7 @@ class MakeSurface:
             # 点群や法線ベクトルの表示
             if Param.work_process:
                 plt.savefig(os.path.join(WORK_DIR_PATH, 'result.png')) \
-                    if Param.output_image else plt.show()
+                    if Param.output_image else self.myplt.show_result()
             # 法線の表示
             if Param.show_normal:
                 o3d.visualization.draw_geometries(
