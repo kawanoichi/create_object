@@ -22,15 +22,15 @@ class Param:
 
     # 作業過程のグラフの表示
     work_process = True
-    # output_image = True
+    output_image = True
 
     # meshなしplyファイルを作成するか
-    point_only = True
+    # point_only = True
 
     # 法線ベクトルの表示
-    show_normal = True
+    # show_normal = True
 
     # meshの表示
     show_mesh = True
 
-    # before_ver = True
+    before_ver = True

@@ -109,7 +109,7 @@ class MakeSurface:
         """
         # 点群データの読み込み
         points = np.load(point_path)
-        self.log.add(title="points.shape", log=points.shape)
+        if develop: self.log.add(title="points.shape", log=points.shape)
         self.myplt.show_point(points, title="Input Point")  # グラフの追加
 
         # オブジェクトの向きを調整
@@ -125,8 +125,8 @@ class MakeSurface:
         point_cloud.estimate_normals(
             # search_param=o3d.geometry.KDTreeSearchParamHybrid(
             #     radius=1, max_nn=10)
-            search_param=o3d.geometry.KDTreeSearchParamKNN(
-                knn=20)
+            # search_param=o3d.geometry.KDTreeSearchParamKNN(
+            #     knn=20)
         )
         # 法線ベクトルの編集(numpy配列に変換)
         normals = np.asarray(point_cloud.normals)
@@ -174,8 +174,8 @@ class MakeSurface:
             distances = point_cloud.compute_nearest_neighbor_distance()  # 近傍距離を計算
             avg_dist = np.mean(distances)  # 近傍距離の平均
             radius = 2*avg_dist  # 半径
-            # radii = [radius, radius * 2]  # [半径,直径]
-            radii = [radius, radius * 1.5, radius * 2]  # [半径,直径]
+            radii = [radius, radius * 2]  # [半径,直径]
+            # radii = [radius, radius * 1.5, radius * 2]  # [半径,直径]
             radii = o3d.utility.DoubleVector(radii)  # numpy配列 >> open3D形式
             recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
                 point_cloud, radii)
@@ -206,13 +206,17 @@ class MakeSurface:
             if Param.work_process:
                 self.myplt.save_result(os.path.join(WORK_DIR_PATH, 'result.png')) \
                     if Param.output_image else self.myplt.show_result()
+
+            # ディスプレイのサイズを取得
+            screen_size = [2560//3, 1440//3]
             # 法線の表示
             if Param.show_normal:
+                # ウィンドウの幅と高さをディスプレイのサイズに設定して描画
                 o3d.visualization.draw_geometries(
-                    [point_cloud], point_show_normal=True)
+                    [point_cloud], point_show_normal=True, width=screen_size[0], height=screen_size[1])
             # メッシュの表示
             if Param.show_mesh:
-                o3d.visualization.draw_geometries([recMeshBPA])
+                o3d.visualization.draw_geometries([recMeshBPA], width=screen_size[0], height=screen_size[1])
 
         return save_mesh_path
 
@@ -254,11 +258,10 @@ if __name__ == "__main__":
         ms.main(point_file_name=image_name,
                 category=args.catecory_number,
                 develop=True)
+        # 処理時間計測用
         execute_time = time.time() - start
         ms.log.add(title="Execution time", log=str(execute_time)[:5]+"s")
     finally:
         ms.log.show()
-
-    # 処理時間計測用
 
     print("終了")
