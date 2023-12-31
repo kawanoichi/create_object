@@ -17,7 +17,6 @@ class MyPlt:
             # $ sudo apt-get install python3-tk
             matplotlib.use('TKAgg')
 
-        
         # 表示する点群(散布図)に関する変数
         self.fig = plt.figure()  # 表示するグラフ
         self.fig_horizontal = 3
@@ -99,3 +98,6 @@ class MyPlt:
 
     def show_result(self) -> None:
         plt.show()
+
+    def save_result(self, save_path) -> None:
+        plt.savefig(save_path)

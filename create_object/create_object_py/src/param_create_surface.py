@@ -13,12 +13,12 @@ class Param:
     show_mesh = False
 
     before_ver = False
-    
+
     """
     以下切り替え用
     """
     # 法線ベクトルの編集処理の有無
-    # edit_normal = True
+    edit_normal = True
 
     # 作業過程のグラフの表示
     work_process = True
@@ -28,9 +28,9 @@ class Param:
     point_only = True
 
     # 法線ベクトルの表示
-    # show_normal = True
+    show_normal = True
 
     # meshの表示
-    # show_mesh = True
+    show_mesh = True
 
     # before_ver = True

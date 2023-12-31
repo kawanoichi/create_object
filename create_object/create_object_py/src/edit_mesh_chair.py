@@ -287,7 +287,7 @@ class EditMeshChair:
             # vector = self.vectors_26[int(vector_26_index)]
             reversed_vector = normal.copy()
             for i, element in enumerate(vector):
-                if element != 0 :
+                if element != 0:
                     reversed_vector[i] *= -1
         except Exception as e:
             print(e)
@@ -401,11 +401,11 @@ class EditMeshChair:
         # 側面の画像を描画する
         img = self.draw_point_cloud_axes(
             work_points, vector_index_list, coordi_index=Coordinate.X.value)
-        
+
         # 側面から線(面)を出力する
         lines, vertical_line, horizontal_line = self.detect_line(
             img, coordi_index=Coordinate.X.value)
-        
+
         # 側面方向に見ていく(椅子の背もたれの面のベクトル方向はZ)
         correct_normals, correct_normal_index = self.inversion_normal(
             work_points, normals, vertical_line, vector_index_list, face_axis=Coordinate.Z.value)
@@ -424,5 +424,5 @@ class EditMeshChair:
 
         if correct_normal_index is not None:
             correct_point = points[correct_normal_index]
-        
+
         return normals, None, correct_point

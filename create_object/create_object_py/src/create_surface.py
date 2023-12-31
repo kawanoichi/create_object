@@ -9,7 +9,6 @@ plyファイルからmeshを生成する.
 $ make surface_run
 """
 import open3d as o3d
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 
@@ -18,7 +17,6 @@ from edit_mesh_airplane import EditMeshAirplane
 from param_create_surface import Param
 from log import Log
 from my_plt import MyPlt
-
 
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -52,19 +50,6 @@ class MakeSurface:
         # 26方位ベクトルの作成([x, y, z])
         self.check_exist(vectors_26_path)
         self.vectors_26 = np.load(vectors_26_path)
-
-        # 26方位に当てはまった各ベクトルの個数
-        self.count_vector_class = None
-
-        # y=1方向のベクトルのインデックスを取得
-        y1_vector = np.array([0, 1, 0])
-        self.y1_vector_index = np.where(
-            np.all(self.vectors_26 == y1_vector, axis=1))
-
-        # x=1方向のベクトルのインデックスを取得
-        x1_vector = np.array([1, 0, 0])
-        self.x1_vector_index = np.where(
-            np.all(self.vectors_26 == x1_vector, axis=1))
 
     @staticmethod
     def check_exist(path):
@@ -145,7 +130,7 @@ class MakeSurface:
         )
         # 法線ベクトルの編集(numpy配列に変換)
         normals = np.asarray(point_cloud.normals)
-        # self.show_normals(points, normals, title="Normals")  # グラフの追加
+        # self.myplt.show_normals(points, normals, title="Normals")  # グラフの追加
 
         """法線ベクトルの編集"""
         if (Param.edit_normal and develop) or execute_web:
@@ -178,7 +163,7 @@ class MakeSurface:
                     self.myplt.show_point(correct_point, title="Correct Point")
 
         # 編集後の法線ベクトルを表示
-        # self.show_normals(points, normals, title="After Normals")
+        # self.myplt.show_normals(points, normals, title="After Normals")
         # 法線ベクトルの更新
         point_cloud.normals = o3d.utility.Vector3dVector(normals)
 
@@ -198,20 +183,19 @@ class MakeSurface:
             # 新しいバージョン
             # 点群のベクトル方向群を正規化する（点に方向はないので）
             point_cloud.orient_normals_consistent_tangent_plane(10)
-                
+
             # "ball pivoting"法で表面を構築
             distances = point_cloud.compute_nearest_neighbor_distance()
             avg_dist = np.mean(distances)
-            radius = 2*avg_dist   
+            radius = 2*avg_dist
             radii = [radius, radius * 2]
             # radii = [radius*0.8, radius, radius*1.5, radius * 2, radius * 2.5]
             recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
-                        point_cloud, o3d.utility.DoubleVector(radii))
-        
+                point_cloud, o3d.utility.DoubleVector(radii))
+
         # 生成したメッシュをPLYファイルに保存
         o3d.io.write_triangle_mesh(save_mesh_path, recMeshBPA)
-        
-        
+
         """開発用"""
         if develop:
             # 点群ファイルの保存
@@ -220,7 +204,7 @@ class MakeSurface:
 
             # 点群や法線ベクトルの表示
             if Param.work_process:
-                plt.savefig(os.path.join(WORK_DIR_PATH, 'result.png')) \
+                self.myplt.save_result(os.path.join(WORK_DIR_PATH, 'result.png')) \
                     if Param.output_image else self.myplt.show_result()
             # 法線の表示
             if Param.show_normal:
@@ -232,16 +216,8 @@ class MakeSurface:
 
         return save_mesh_path
 
+
 if __name__ == "__main__":
-    import matplotlib
-
-    if Param.output_image:
-        matplotlib.use('Agg')
-    else:
-        # 最初は以下を実行する
-        # $ sudo apt-get install python3-tk
-        matplotlib.use('TKAgg')
-
     import time
     start = time.time()
 

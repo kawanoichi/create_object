@@ -10,11 +10,13 @@ SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
 WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
+
 class Coordinate(Enum):
     """座標クラス."""
     X = 0
     Y = 1
     Z = 2
+
 
 class EditMeshAirplane:
     def __init__(self, vectors_26, develop=False, log=None):
@@ -34,14 +36,12 @@ class EditMeshAirplane:
         self.lower_vector_index = np.where(
             (self.vectors_26 == self.lower_vector).all(axis=1))[0]
 
-
         # オブジェクトの右方向
         self.right_vector = np.array([1, 0, 0])
         self.right_vector_index = np.where(
             (self.vectors_26 == self.right_vector).all(axis=1))[0][0]
         self.left_vector_index = np.where(
             (self.vectors_26 == (self.right_vector * -1)).all(axis=1))[0][0]
-
 
     @staticmethod
     def draw_line(img, theta, rho):
@@ -309,7 +309,6 @@ class EditMeshAirplane:
                 count += 1
         self.log.add(title=f"direct {coordi_index} outside count", log=count)
         return normals
-
 
     def edit_normal(self, points: np.ndarray, normals=None) -> None:
         """法線ベクトルに関連する関数.
