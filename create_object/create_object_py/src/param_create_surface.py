@@ -12,8 +12,6 @@ class Param:
     show_normal = False
     show_mesh = False
 
-    before_ver = False
-
     """
     以下切り替え用
     """
@@ -31,6 +29,4 @@ class Param:
     # show_normal = True
 
     # meshの表示
-    show_mesh = True
-
-    before_ver = True
+    # show_mesh = True

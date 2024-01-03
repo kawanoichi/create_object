@@ -1,24 +1,16 @@
 import os
 import cv2
 import numpy as np
-from enum import Enum
 from itertools import cycle
 
 
 from param_create_surface import Param
 from calculator import Calculator
-
+from coordinate import Coordinate
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
 WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
-
-
-class Coordinate(Enum):
-    """座標クラス."""
-    X = 0
-    Y = 1
-    Z = 2
 
 
 class EditNormalMethod:
@@ -187,7 +179,7 @@ class EditNormalMethod:
         # エッジ検出
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         reversed_gray = cv2.bitwise_not(gray)
-        cv2.imwrite(os.path.join(WORK_DIR_PATH, 'bitwise.png'), reversed_gray)
+        # cv2.imwrite(os.path.join(WORK_DIR_PATH, 'bitwise.png'), reversed_gray)
 
         # 線分検出
         if coordi_index == Coordinate.X.value:
@@ -227,8 +219,14 @@ class EditNormalMethod:
         x1, y1, x2, y2 = line
         - 描画して確かめた感じ、threの数値が高いほうが水平な気がする
         """
-        # x1に関して小さい順にソート
-        lines = lines[np.argsort(lines[:, 0])]
+        if coordi_index == Coordinate.X.value:
+            # y軸に関して小さい順にソート
+            lines = lines[np.argsort(lines[:, 1])]
+
+        else:
+            # x1に関して小さい順にソート
+            lines = lines[np.argsort(lines[:, 0])]
+            raise Exception("TODO: ここがあっているか確認する")
 
         delete_index = []
         vertical_line_index = []
@@ -236,7 +234,9 @@ class EditNormalMethod:
 
         diff_a_thre = 20  # 傾き(度数法)の閾値
         diff_coordi_thre = int(img.shape[0] / 50)  # x1座標の閾値
-        dis_thre = 20  # 直線と点の距離の閾値
+        dis_thre = int(img.shape[0] / 40)  # 直線と点の距離の閾値
+        self.log.add(title="diff_coordi_thre", log=diff_coordi_thre)  # ログ
+        self.log.add(title="dis_thre", log=dis_thre)  # ログ
         for i, line in enumerate(lines):
             if i == 0:
                 pre_line = line
@@ -247,11 +247,15 @@ class EditNormalMethod:
                 # ライン同士の距離で比較
                 condition2 = Calculator.distance_point_to_line(pre_line, line[:2]) < dis_thre\
                     and Calculator.distance_point_to_line(pre_line, line[2:]) < dis_thre
+                
                 if condition1 and condition2:
                     delete_index.append(i)
                     continue
                 else:
+                    # print("")
+                    # print(Calculator.distance_point_to_line(pre_line, line[:2]))
                     pre_line = line
+            
             # ラインが水平か垂直かで分類
             if Calculator.calculate_slope(line) > 45:  # 縦
                 vertical_line_index.append(i)
@@ -275,29 +279,26 @@ class EditNormalMethod:
                 x1, y1, x2, y2 = line
                 color = next(colors)
                 cv2.line(detect_line_img, (x1, y1), (x2, y2), color, 5)
-            # x1の閾値の幅の確認
+            # diff_coordi_threの閾値の幅の確認
             detect_line_img[:, 50:52] = [0, 0, 255]
             detect_line_img[:, 50+diff_coordi_thre:52 +
                             diff_coordi_thre] = [0, 0, 255]
+            # dis_threの閾値の幅の確認
+            detect_line_img[50:52, :] = [0, 0, 255]
+            detect_line_img[50+dis_thre:52+dis_thre,
+                            :] = [0, 0, 255]
             cv2.imwrite(os.path.join(WORK_DIR_PATH,
-                        'detect_line2.png'), detect_line_img)
+                        'detect_line_mearged.png'), detect_line_img)
 
         return lines, vertical_line, horizontal_line
 
     def reverse_vector(self, normal, vector_26_index):
-        try:
-            vector = self.vectors_26[vector_26_index]
-            # vector = self.vectors_26[int(vector_26_index)]
-            reversed_vector = normal.copy()
-            for i, element in enumerate(vector):
-                if element != 0:
-                    reversed_vector[i] *= -1
-        except Exception as e:
-            print(e)
-            print(f"normal: {normal}")
-            print(f"vector_26_index: {vector_26_index}")
-            exit()
-
+        """ベクトルを逆にする関数."""
+        vector = self.vectors_26[vector_26_index]
+        reversed_vector = normal.copy()
+        for i, element in enumerate(vector):
+            if element != 0:
+                reversed_vector[i] *= -1
         return reversed_vector
 
     def inversion_normal(self, points, normals, lines, vector_index_list, face_axis):
@@ -308,7 +309,6 @@ class EditNormalMethod:
             face_axis: 面面を表す法線ベクトルの座標系 ※0(x) or 1(y) or 2(z)
         """
         if lines.shape[0] % 2 != 0:
-            self.log.add(title="Invert Normal Executed", log="False")
             return None, None
 
         lines = lines[np.argsort(lines[:, 0])]
@@ -332,26 +332,38 @@ class EditNormalMethod:
 
         lines = lines[np.argsort(lines[:, line_axis])]
 
-        correct_normal_index = []
+        correct_even_index = []
+        correct_odd_index = []
         # 閾値は実際にやってうまく言った数値
         diff_coordi_thre = 20
         for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
             # 対象としている法線ベクトルの場合
             if np.any(target_posi_vec_index == vec_index) or np.any(target_nega_vec_index == vec_index):
                 # 各ラインについて見ていく
+                near_line_index = None
+                min_dis = 1000
                 for j, line in enumerate(lines):
-                    # ラインに点が近いか、判別
-                    if abs(point[face_axis] - line[line_axis]) < diff_coordi_thre:
-                        # 偶数本の場合
-                        if j % 2 == 0:
-                            if np.any(target_posi_vec_index == vec_index):
-                                normals[i] = \
-                                    self.reverse_vector(normals[i], vec_index)
-                        # 奇数本の場合
-                        elif any(target_nega_vec_index == vec_index):
-                            correct_normal_index.append(i)
+                    dis = abs(point[face_axis] - line[line_axis]) # ラインとの距離を算出
+                    if dis < min_dis:
+                        near_line_index = j # 一番近いラインの更新
+                        min_dis = dis
+
+                # ラインから点が近い場合
+                if near_line_index is not None and min_dis < diff_coordi_thre:
+                    # 偶数本の場合(Even Number)
+                    if near_line_index % 2 == 0:
+                        if np.any(target_posi_vec_index == vec_index):
+                            correct_even_index.append(i)
+                            # print(f"normals[i]: {normals[i]}")
+                            if normals[i] >
                             normals[i] = \
                                 self.reverse_vector(normals[i], vec_index)
+                            # print(f"normals[i]: {normals[i]}")
+                            # exit()
+                    # 奇数本の場合(Odd Number)
+                    elif np.any(target_nega_vec_index == vec_index):
+                        correct_odd_index.append(i)
+                        normals[i] = \
+                            self.reverse_vector(normals[i], vec_index)
 
-        self.log.add(title="Invert Normal Executed", log="True")
-        return normals, correct_normal_index
+        return normals, correct_even_index, correct_odd_index

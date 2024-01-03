@@ -1,23 +1,16 @@
 import os
 import cv2
 import numpy as np
-from enum import Enum
 
 # from param_create_surface import Param
 from edit_normal_method import EditNormalMethod
 from calculator import Calculator
+from coordinate import Coordinate
 
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
 WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
-
-
-class Coordinate(Enum):
-    """座標クラス."""
-    X = 0
-    Y = 1
-    Z = 2
 
 
 class EditNormal:
@@ -32,30 +25,36 @@ class EditNormal:
 
     def airplane(self, points, normals, vector_index_list):
         """飛行機の法線ベクトルを修正"""
+
         # 側面の画像を描画する
         img = self.edit_normal.draw_point_cloud_axes(
-            points, vector_index_list, coordi_index=Coordinate.X.value)
+            points, vector_index_list, coordi_index=Coordinate.Z.value)
 
-        # 側面から線(面)を出力する
-        _, vertical_line, horizontal_line = self.edit_normal.detect_line(
+        # ライン(面)を検出
+        _, _, horizontal_line = self.edit_normal.detect_line(
             img, coordi_index=Coordinate.X.value)
-
-        # 側面方向に見ていく(椅子の背もたれの面のベクトル方向はZ)
-        correct_normals, correct_normal_index = self.edit_normal.inversion_normal(
-            points, normals, vertical_line, vector_index_list, face_axis=Coordinate.Z.value)
+        # 法線ベクトルの修正
+        correct_normals, correct_even_index, correct_odd_index = \
+            self.edit_normal.inversion_normal(points,
+                                              normals,
+                                              horizontal_line,
+                                              vector_index_list,
+                                              face_axis=Coordinate.Y.value)
         if correct_normals is None:
+            self.log.add(title="Invert Normal Executed", log="False")
             return normals, None
         else:
+            self.log.add(title="Invert Normal Executed", log="True")
             normals = correct_normals
 
         # 椅子の座る部分の面を見つけて法線ベクトルの補正を加える
-        correct_normals, correct_normal_index = self.edit_normal.inversion_normal(
-            points, normals, horizontal_line, vector_index_list, face_axis=Coordinate.Y.value)
+        # correct_normals, correct_normal_index = self.edit_normal.inversion_normal(
+        #     points, normals, horizontal_line, vector_index_list, face_axis=Coordinate.Y.value)
 
-        if correct_normal_index is not None:
-            correct_point = points[correct_normal_index]
+        # if correct_normal_index is None:
+        #     return normals, None
 
-        return normals, correct_point
+        return normals, correct_even_index, correct_odd_index
 
     def chair(self, points, normals, vector_index_list):
         """椅子の法線ベクトルを修正"""
@@ -79,8 +78,9 @@ class EditNormal:
         correct_normals, correct_normal_index = self.edit_normal.inversion_normal(
             points, normals, horizontal_line, vector_index_list, face_axis=Coordinate.Y.value)
 
-        if correct_normal_index is not None:
-            correct_point = points[correct_normal_index]
+        if correct_normal_index is None:
+            return normals, None
+        correct_point = points[correct_normal_index]
 
         return normals, correct_point
 
@@ -122,11 +122,12 @@ class EditNormal:
             normals = correct_normals
 
         if category == "0":
-            normals, correct_point = self.airplane(
+            normals, correct_even_index, correct_odd_index = self.airplane(
                 work_points, normals, vector_index_list)
         elif category == "1":
-            normals, correct_point = self.chair(work_points, normals, vector_index_list)
+            normals, correct_point = self.chair(
+                work_points, normals, vector_index_list)
         else:
             raise Exception("Category ID Error")
 
-        return normals, None, correct_point
+        return normals, correct_even_index, correct_odd_index

@@ -69,6 +69,32 @@ class MyPlt:
                    points[:, 1],
                    c='b',
                    s=5)
+    
+    def show_correct_point_2D(self, points, index1, index2, title="None") -> None:
+        """2種類の点に分けた点群を表示する.
+
+        Args:
+            points(np.ndarray): 点群
+        """
+        ax = self.fig.add_subplot(self.fig_vertical,
+                                  self.fig_horizontal,
+                                  self.graph_num)
+        self.graph_num += 1
+
+        plt.title(title)
+        ax.set(xlabel='x', ylabel='y')
+
+        point = points[index1]
+        ax.scatter(point[:, 0],
+                   point[:, 1],
+                   c='r',
+                   s=5)
+
+        point = points[index2]
+        ax.scatter(point[:, 0],
+                   point[:, 1],
+                   c='b',
+                   s=5)
 
     def show_normals(self, points, normals, title="None") -> None:
         """点群と法線ベクトルを表示する関数.

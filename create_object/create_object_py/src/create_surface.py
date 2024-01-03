@@ -12,7 +12,6 @@ import open3d as o3d
 import numpy as np
 import os
 
-# from edit_mesh_chair import EditMeshChair
 from src.edit_normal import EditNormal
 from param_create_surface import Param
 from log import Log
@@ -88,7 +87,6 @@ class MakeSurface:
 
     def main(self, point_file_name, category=0, develop=False, execute_web=False) -> None:
         """点群をメッシュ化し、表示する関数."""
-
         """
         パス設定
         """
@@ -134,69 +132,38 @@ class MakeSurface:
         """法線ベクトルの編集"""
         normals = np.asarray(point_cloud.normals)  # numpy配列に変換
         if (Param.edit_normal and develop) or execute_web:
-            # メッス変数クラスのインスタンス化
-            # if category == "0":
-            #     self.log.add(title="Edit Mode", log="Airplane")
-            #     edit = EditNormal(vectors_26=self.vectors_26,
-            #                             develop=develop,
-            #                             log=self.log)
-            # elif category == "1":
-            #     self.log.add(title="Edit Mode", log="Chair")
-            #     edit = EditMeshChair(vectors_26=self.vectors_26,
-            #                          develop=develop,
-            #                          log=self.log)
-            # else:
-            #     raise Exception("Category Error")
-
+            # メッシュ変数メソッドの実行
             edit = EditNormal(vectors_26=self.vectors_26,
                               develop=develop,
                               log=self.log)
-            # メッシュ変数メソッドの実行
-            edited_normals, wing_points, correct_point = \
-                edit.main(category, points, normals)
+            edited_normals, correct_even_index, correct_odd_index = edit.main(category, points, normals)
 
+            # 法線ベクトルの更新
             if edited_normals is not None:
                 self.log.add(title="Correct Normals", log="True")
                 normals = edited_normals
             else:
                 self.log.add(title="Correct Normals", log="False")
 
-            if Param.work_process:
-                if wing_points is not None:
-                    self.myplt.show_point_2D(wing_points, title="2D")
-                if correct_point is not None:
-                    self.myplt.show_point(correct_point, title="Correct Point")
+            if correct_even_index is not None and correct_odd_index is not None:
+                self.log.add(title="correct_even_index len", log=len(correct_even_index))
+                self.log.add(title="correct_odd_index len", log=len(correct_odd_index))
+                self.myplt.show_correct_point_2D(
+                    points, correct_even_index, correct_odd_index, title="Correct Point111")
 
-        # 編集後の法線ベクトルを表示
-        # self.myplt.show_normals(points, normals, title="After Normals")
         # 法線ベクトルの更新
         point_cloud.normals = o3d.utility.Vector3dVector(normals)
 
         """メッシュ作成"""
         # 三角形メッシュを計算する
-        if Param.before_ver:
-            # 過去バージョン
-            distances = point_cloud.compute_nearest_neighbor_distance()  # 近傍距離を計算
-            avg_dist = np.mean(distances)  # 近傍距離の平均
-            radius = 2*avg_dist  # 半径
-            radii = [radius, radius * 2]  # [半径,直径]
-            # radii = [radius, radius * 1.5, radius * 2]  # [半径,直径]
-            radii = o3d.utility.DoubleVector(radii)  # numpy配列 >> open3D形式
-            recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
-                point_cloud, radii)
-        else:
-            # 新しいバージョン
-            # 点群のベクトル方向群を正規化する（点に方向はないので）
-            point_cloud.orient_normals_consistent_tangent_plane(10)
-
-            # "ball pivoting"法で表面を構築
-            distances = point_cloud.compute_nearest_neighbor_distance()
-            avg_dist = np.mean(distances)
-            radius = 2*avg_dist
-            radii = [radius, radius * 2]
-            # radii = [radius*0.8, radius, radius*1.5, radius * 2, radius * 2.5]
-            recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
-                point_cloud, o3d.utility.DoubleVector(radii))
+        # point_cloud.orient_normals_consistent_tangent_plane(10)
+        distances = point_cloud.compute_nearest_neighbor_distance()  # 近傍距離を計算
+        avg_dist = np.mean(distances)  # 近傍距離の平均
+        radius = 2*avg_dist  # 半径
+        radii = [radius, radius * 1.5, radius * 2]  # [半径,直径]
+        radii = o3d.utility.DoubleVector(radii)  # numpy配列 >> open3D形式
+        recMeshBPA = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
+            point_cloud, radii)
 
         # 生成したメッシュをPLYファイルに保存
         o3d.io.write_triangle_mesh(save_mesh_path, recMeshBPA)
