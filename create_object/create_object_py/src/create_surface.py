@@ -136,7 +136,8 @@ class MakeSurface:
             edit = EditNormal(vectors_26=self.vectors_26,
                               develop=develop,
                               log=self.log)
-            edited_normals, correct_even_index, correct_odd_index = edit.main(category, points, normals)
+            edited_normals, correct_even_index, correct_odd_index = edit.main(
+                category, points, normals)
 
             # 法線ベクトルの更新
             if edited_normals is not None:
@@ -146,10 +147,14 @@ class MakeSurface:
                 self.log.add(title="Correct Normals", log="False")
 
             if correct_even_index is not None and correct_odd_index is not None:
-                self.log.add(title="correct_even_index len", log=len(correct_even_index))
-                self.log.add(title="correct_odd_index len", log=len(correct_odd_index))
+                self.log.add(title="correct_even_index len",
+                             log=len(correct_even_index))
+                self.log.add(title="correct_odd_index len",
+                             log=len(correct_odd_index))
                 self.myplt.show_correct_point_2D(
-                    points, correct_even_index, correct_odd_index, title="Correct Point111")
+                    points, correct_even_index, correct_odd_index, title="Correct Point 2D")
+                self.myplt.show_correct_point(
+                    points, correct_even_index, correct_odd_index, title="Correct Point 3D")
 
         # 法線ベクトルの更新
         point_cloud.normals = o3d.utility.Vector3dVector(normals)

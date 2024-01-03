@@ -47,13 +47,6 @@ class EditNormal:
             self.log.add(title="Invert Normal Executed", log="True")
             normals = correct_normals
 
-        # 椅子の座る部分の面を見つけて法線ベクトルの補正を加える
-        # correct_normals, correct_normal_index = self.edit_normal.inversion_normal(
-        #     points, normals, horizontal_line, vector_index_list, face_axis=Coordinate.Y.value)
-
-        # if correct_normal_index is None:
-        #     return normals, None
-
         return normals, correct_even_index, correct_odd_index
 
     def chair(self, points, normals, vector_index_list):

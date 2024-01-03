@@ -69,7 +69,38 @@ class MyPlt:
                    points[:, 1],
                    c='b',
                    s=5)
-    
+
+    def show_correct_point(self, points, index1, index2, title="None") -> None:
+        """点群を表示する関数.
+        NOTE: 表示する軸方向をopen3dと統一
+            x: 右方向
+            y: 上
+            z: 手前
+        Args:
+            points(np.ndarray): 点群
+        """
+        ax = self.fig.add_subplot(self.fig_vertical,
+                                  self.fig_horizontal,
+                                  self.graph_num,
+                                  projection='3d')
+        plt.xlim(-0.3, 0.3)
+        plt.ylim(-0.3, 0.3)
+        ax.set_zlim(-0.3, 0.3)
+        self.graph_num += 1
+        plt.title(title)
+        ax.set(xlabel='x', ylabel='y', zlabel='z')
+        point = points[index2]
+        ax.scatter(point[:, 0],
+                   point[:, 1],
+                   point[:, 2],
+                   c='b')
+
+        point = points[index1]
+        ax.scatter(point[:, 0],
+                   point[:, 1],
+                   point[:, 2],
+                   c='r')
+
     def show_correct_point_2D(self, points, index1, index2, title="None") -> None:
         """2種類の点に分けた点群を表示する.
 
@@ -84,16 +115,16 @@ class MyPlt:
         plt.title(title)
         ax.set(xlabel='x', ylabel='y')
 
-        point = points[index1]
-        ax.scatter(point[:, 0],
-                   point[:, 1],
-                   c='r',
-                   s=5)
-
         point = points[index2]
         ax.scatter(point[:, 0],
                    point[:, 1],
                    c='b',
+                   s=5)
+
+        point = points[index1]
+        ax.scatter(point[:, 0],
+                   point[:, 1],
+                   c='r',
                    s=5)
 
     def show_normals(self, points, normals, title="None") -> None:

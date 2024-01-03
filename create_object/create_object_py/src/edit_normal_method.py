@@ -247,7 +247,7 @@ class EditNormalMethod:
                 # ライン同士の距離で比較
                 condition2 = Calculator.distance_point_to_line(pre_line, line[:2]) < dis_thre\
                     and Calculator.distance_point_to_line(pre_line, line[2:]) < dis_thre
-                
+
                 if condition1 and condition2:
                     delete_index.append(i)
                     continue
@@ -255,7 +255,7 @@ class EditNormalMethod:
                     # print("")
                     # print(Calculator.distance_point_to_line(pre_line, line[:2]))
                     pre_line = line
-            
+
             # ラインが水平か垂直かで分類
             if Calculator.calculate_slope(line) > 45:  # 縦
                 vertical_line_index.append(i)
@@ -311,6 +311,8 @@ class EditNormalMethod:
         if lines.shape[0] % 2 != 0:
             return None, None
 
+        self.log.add(title="face_axis", log=face_axis)
+
         lines = lines[np.argsort(lines[:, 0])]
         if face_axis == Coordinate.X.value:
             raise ()
@@ -335,7 +337,7 @@ class EditNormalMethod:
         correct_even_index = []
         correct_odd_index = []
         # 閾値は実際にやってうまく言った数値
-        diff_coordi_thre = 20
+        diff_coordi_thre = 30
         for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
             # 対象としている法線ベクトルの場合
             if np.any(target_posi_vec_index == vec_index) or np.any(target_nega_vec_index == vec_index):
@@ -343,27 +345,25 @@ class EditNormalMethod:
                 near_line_index = None
                 min_dis = 1000
                 for j, line in enumerate(lines):
-                    dis = abs(point[face_axis] - line[line_axis]) # ラインとの距離を算出
+                    dis = abs(point[face_axis] - line[line_axis])  # ラインとの距離を算出
                     if dis < min_dis:
-                        near_line_index = j # 一番近いラインの更新
+                        near_line_index = j  # 一番近いラインの更新
                         min_dis = dis
 
                 # ラインから点が近い場合
                 if near_line_index is not None and min_dis < diff_coordi_thre:
                     # 偶数本の場合(Even Number)
                     if near_line_index % 2 == 0:
-                        if np.any(target_posi_vec_index == vec_index):
-                            correct_even_index.append(i)
-                            # print(f"normals[i]: {normals[i]}")
-                            if normals[i] >
+                        if normals[i, face_axis] > 0:
                             normals[i] = \
                                 self.reverse_vector(normals[i], vec_index)
-                            # print(f"normals[i]: {normals[i]}")
-                            # exit()
+                            correct_even_index.append(i)  # 赤
+
                     # 奇数本の場合(Odd Number)
-                    elif np.any(target_nega_vec_index == vec_index):
-                        correct_odd_index.append(i)
-                        normals[i] = \
-                            self.reverse_vector(normals[i], vec_index)
+                    else:
+                        if normals[i, face_axis] < 0:
+                            normals[i] = \
+                                self.reverse_vector(normals[i], vec_index)
+                            correct_odd_index.append(i)  # 青
 
         return normals, correct_even_index, correct_odd_index
