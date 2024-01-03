@@ -1,11 +1,13 @@
 import os
+import cv2
 import numpy as np
 from enum import Enum
-import cv2
 from itertools import cycle
+
 
 from param_create_surface import Param
 from calculator import Calculator
+
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
@@ -19,7 +21,7 @@ class Coordinate(Enum):
     Z = 2
 
 
-class EditMeshChair:
+class EditNormalMethod:
     def __init__(self, vectors_26, develop=False, log=None):
         self.vectors_26 = vectors_26
         self.develop = develop
@@ -54,6 +56,7 @@ class EditMeshChair:
             vector_index_list: 26方位のベクトルを比較
             coordi_index: 外側に向ける座標軸
         """
+        """条件を決定"""
         # 左右
         if coordi_index == Coordinate.X.value:
             condition1 = self.right_vector_index
@@ -352,77 +355,3 @@ class EditMeshChair:
 
         self.log.add(title="Invert Normal Executed", log="True")
         return normals, correct_normal_index
-
-    def edit_normal(self, points: np.ndarray, normals=None) -> None:
-        """法線ベクトルを修正する関数.
-        Args:
-            points: 点群座標
-            normals: 法線ベクトル
-        """
-        # 値が少数なので処理しやすいように正規化
-        work_points = points * 1000
-        work_points = np.floor(work_points).astype(int)
-
-        """点群を法線の向きでグループ分け"""
-        # vector_index_list: 法線が'self.vectors_26'の中で一番近いベクトルのインデックスを格納
-        vector_index_list = np.zeros(normals.shape[0], dtype=int)  # (2048,)
-        count_list = np.zeros(self.vectors_26.shape[0], dtype=int)  # 確認用
-        for i, normal in enumerate(normals):
-            min_theta = 180  # 比較するためのなす角
-            min_index = 0  # 確認用
-            for j, vector26 in enumerate(self.vectors_26):
-                angle = int(Calculator.angle_between_vectors(normal, vector26))
-                if angle < min_theta:
-                    vector_index_list[i] = j
-                    min_theta = angle
-                    min_index = j  # 確認用
-            count_list[min_index] += 1  # 確認用
-
-        # 確認用
-        # for i, count in enumerate(count_list):
-        #     print(f"{i}: {count}")
-
-        """椅子の側面を修正"""
-
-        # """
-        # 左右方向の法線ベクトルを修正
-        correct_normals = self.correct_direct_outside(
-            points, normals, vector_index_list, coordi_index=Coordinate.X.value)
-        correct_normals = self.correct_direct_outside(
-            points, correct_normals, vector_index_list, coordi_index=Coordinate.Y.value)
-        if correct_normals is not None:
-            normals = correct_normals
-        # """
-
-        """椅子の面を見つけて編集する"""
-
-        correct_point = None
-        # """
-        # 側面の画像を描画する
-        img = self.draw_point_cloud_axes(
-            work_points, vector_index_list, coordi_index=Coordinate.X.value)
-
-        # 側面から線(面)を出力する
-        lines, vertical_line, horizontal_line = self.detect_line(
-            img, coordi_index=Coordinate.X.value)
-
-        # 側面方向に見ていく(椅子の背もたれの面のベクトル方向はZ)
-        correct_normals, correct_normal_index = self.inversion_normal(
-            work_points, normals, vertical_line, vector_index_list, face_axis=Coordinate.Z.value)
-        if correct_normals is None:
-            return normals, None, None
-        else:
-            normals = correct_normals
-
-        # 椅子の座る部分の面を見つけて法線ベクトルの補正を加える
-        correct_normals, correct_normal_index = self.inversion_normal(
-            work_points, normals, horizontal_line, vector_index_list, face_axis=Coordinate.Y.value)
-        # if correct_normals is None:
-        #     return normals, None, None
-        # else:
-        #     normals =  correct_normals
-
-        if correct_normal_index is not None:
-            correct_point = points[correct_normal_index]
-
-        return normals, None, correct_point

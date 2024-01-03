@@ -132,8 +132,8 @@ if __name__ == "__main__":
     # Option
     category_name = category_data[str(args.catecory_number)]
     epoch = 50
-    # num_points = 1024
-    num_points = 2048
+    num_points = 1024
+    # num_points = 2048
     model_file_name = category_name+"_modelG_"+str(epoch)+".pth"
 
     # 画像のファイル名

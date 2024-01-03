@@ -12,8 +12,8 @@ import open3d as o3d
 import numpy as np
 import os
 
-from edit_mesh_chair import EditMeshChair
-from edit_mesh_airplane import EditMeshAirplane
+# from edit_mesh_chair import EditMeshChair
+from src.edit_normal import EditNormal
 from param_create_surface import Param
 from log import Log
 from my_plt import MyPlt
@@ -109,7 +109,8 @@ class MakeSurface:
         """
         # 点群データの読み込み
         points = np.load(point_path)
-        if develop: self.log.add(title="points.shape", log=points.shape)
+        if develop:
+            self.log.add(title="points.shape", log=points.shape)
         self.myplt.show_point(points, title="Input Point")  # グラフの追加
 
         # オブジェクトの向きを調整
@@ -128,27 +129,31 @@ class MakeSurface:
             # search_param=o3d.geometry.KDTreeSearchParamKNN(
             #     knn=20)
         )
-        # 法線ベクトルの編集(numpy配列に変換)
-        normals = np.asarray(point_cloud.normals)
         # self.myplt.show_normals(points, normals, title="Normals")  # グラフの追加
 
         """法線ベクトルの編集"""
+        normals = np.asarray(point_cloud.normals)  # numpy配列に変換
         if (Param.edit_normal and develop) or execute_web:
-            if category == "0":
-                self.log.add(title="Edit Mode", log="Airplane")
-                edit = EditMeshAirplane(vectors_26=self.vectors_26,
-                                        develop=develop,
-                                        log=self.log)
-            elif category == "1":
-                self.log.add(title="Edit Mode", log="Chair")
-                edit = EditMeshChair(vectors_26=self.vectors_26,
-                                     develop=develop,
-                                     log=self.log)
-            else:
-                raise Exception("Category Error")
+            # メッス変数クラスのインスタンス化
+            # if category == "0":
+            #     self.log.add(title="Edit Mode", log="Airplane")
+            #     edit = EditNormal(vectors_26=self.vectors_26,
+            #                             develop=develop,
+            #                             log=self.log)
+            # elif category == "1":
+            #     self.log.add(title="Edit Mode", log="Chair")
+            #     edit = EditMeshChair(vectors_26=self.vectors_26,
+            #                          develop=develop,
+            #                          log=self.log)
+            # else:
+            #     raise Exception("Category Error")
 
+            edit = EditNormal(vectors_26=self.vectors_26,
+                              develop=develop,
+                              log=self.log)
+            # メッシュ変数メソッドの実行
             edited_normals, wing_points, correct_point = \
-                edit.edit_normal(points, normals)
+                edit.main(category, points, normals)
 
             if edited_normals is not None:
                 self.log.add(title="Correct Normals", log="True")
@@ -216,7 +221,8 @@ class MakeSurface:
                     [point_cloud], point_show_normal=True, width=screen_size[0], height=screen_size[1])
             # メッシュの表示
             if Param.show_mesh:
-                o3d.visualization.draw_geometries([recMeshBPA], width=screen_size[0], height=screen_size[1])
+                o3d.visualization.draw_geometries(
+                    [recMeshBPA], width=screen_size[0], height=screen_size[1])
 
         return save_mesh_path
 
