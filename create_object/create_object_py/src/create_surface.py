@@ -156,7 +156,18 @@ class MakeSurface:
                 self.myplt.show_correct_point(
                     points, correct_even_index, correct_odd_index, title="Correct Point 3D")
 
+        """作業用
+        delete_index = []
+        for i, point in enumerate(points):
+            if point[1] > 0:
+                delete_index.append(i)
+        points = np.delete(points, delete_index, 0)
+        normals = np.delete(normals, delete_index, 0)
+        # """
+
+
         # 法線ベクトルの更新
+        point_cloud.points = o3d.utility.Vector3dVector(points)
         point_cloud.normals = o3d.utility.Vector3dVector(normals)
 
         """メッシュ作成"""

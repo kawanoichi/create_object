@@ -43,9 +43,9 @@ class MyPlt:
         plt.title(title)
         ax.set(xlabel='x', ylabel='y', zlabel='z')
         colors = np.where(points[:, 0] > 0, 'red', 'blue')
-        # colors1 = np.where(points[:, 0] > 0, 'red', 'blue')
-        # colors2 = np.where(points[:, 0] > 0, 'purple', 'green')
-        # colors = np.where(points[:, 1] > 0, colors1, colors2)
+        colors1 = np.where(points[:, 0] > 0, 'red', 'blue')
+        colors2 = np.where(points[:, 0] > 0, 'purple', 'green')
+        colors = np.where(points[:, 1] > 0, colors1, colors2)
         ax.scatter(points[:, 0],
                    points[:, 1],
                    points[:, 2],

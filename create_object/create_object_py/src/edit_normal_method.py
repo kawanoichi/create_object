@@ -40,51 +40,32 @@ class EditNormalMethod:
         self.left_vector_index = np.where(
             (self.vectors_26 == (self.right_vector * -1)).all(axis=1))[0][0]
 
-    def correct_direct_outside(self, points, normals, vector_index_list, coordi_index: int):
+    def correct_direct_outside(self, points, normals, vector_index_list, coordi_index: int, symmetry="point"):
         """法線ベクトルを外側に向ける関数.
         Args:
             points: 点群座標
             normals: 法線ベクトル
             vector_index_list: 26方位のベクトルを比較
             coordi_index: 外側に向ける座標軸
+            symmetry: 線対称or点対称(line or point)
         """
         """条件を決定"""
-        # 左右
-        if coordi_index == Coordinate.X.value:
-            condition1 = self.right_vector_index
-            condition2 = self.left_vector_index
-        # 上下
-        elif coordi_index == Coordinate.Y.value:
-            condition1 = self.upper_vector_index
-            condition2 = self.lower_vector_index
-        # 前後
-        elif coordi_index == Coordinate.Z.value:
-            condition1 = self.front_vector_index
-            condition2 = self.back_vector_index
-        else:
-            raise ()
+        target_posi_vec_index = np.where(
+            self.vectors_26[:, coordi_index] == 1)[0]
+        target_nega_vec_index = np.where(
+            self.vectors_26[:, coordi_index] == -1)[0]
 
-        target_index = np.where(
-            (vector_index_list == condition1) |
-            (vector_index_list == condition2))[0]
-
-        if len(target_index) == 0:
-            return None
-
-        # ベクトルの向きと座標の符号を比較し、修正
-        count = 0
-        for index in target_index:
-            if points[index, coordi_index] > 0 and \
-                    normals[index, coordi_index] < 0:
-                # normals[index, coordi_index] *= -1
-                normals[index] *= -1
-                count += 1
-            if points[index, coordi_index] < 0 and \
-                    normals[index, coordi_index] > 0:
-                # normals[index, coordi_index] *= -1
-                normals[index] *= -1
-                count += 1
-        self.log.add(title=f"direct {coordi_index} outside count", log=count)
+        for i, vec_index in enumerate(vector_index_list):
+            if np.any(target_nega_vec_index == vec_index) and points[i, coordi_index] > 0:
+                if symmetry == "point":
+                    normals[i] = self.reverse_vector(normals[i], vec_index)
+                if symmetry == "line":
+                    normals[i, coordi_index] *= -1
+            elif np.any(target_posi_vec_index == vec_index) and points[i, coordi_index] < 0:
+                if symmetry == "point":
+                    normals[i] = self.reverse_vector(normals[i], vec_index)
+                if symmetry == "line":
+                    normals[i, coordi_index] *= -1
         return normals
 
     def draw_point_cloud_axes(self, points, vector_index_list, coordi_index: int):
@@ -219,28 +200,32 @@ class EditNormalMethod:
         x1, y1, x2, y2 = line
         - 描画して確かめた感じ、threの数値が高いほうが水平な気がする
         """
-        if coordi_index == Coordinate.X.value:
-            # y軸に関して小さい順にソート
-            lines = lines[np.argsort(lines[:, 1])]
-
-        else:
-            # x1に関して小さい順にソート
-            lines = lines[np.argsort(lines[:, 0])]
-            raise Exception("TODO: ここがあっているか確認する")
-
-        delete_index = []
-        vertical_line_index = []
-        horizontal_line_index = []
-
+        # lineマージ用
         diff_a_thre = 20  # 傾き(度数法)の閾値
         diff_coordi_thre = int(img.shape[0] / 50)  # x1座標の閾値
         dis_thre = int(img.shape[0] / 40)  # 直線と点の距離の閾値
         self.log.add(title="diff_coordi_thre", log=diff_coordi_thre)  # ログ
         self.log.add(title="dis_thre", log=dis_thre)  # ログ
-        for i, line in enumerate(lines):
-            if i == 0:
+        pre_line = None
+        # 縦線用
+        vertical_lines = lines[np.argsort(lines[:, 0])]
+        vertical_line_index = []
+        # 横線用1
+        horizontal_line_index = []
+
+        # 縦線だけを見ていく
+        for i, line in enumerate(vertical_lines):
+            # 横線は無視
+            # print(f"i: {i}, Calculator.calculate_slope(line): {Calculator.calculate_slope(line)}")
+            if Calculator.calculate_slope(line) < 45:
+                # print(line)
+                horizontal_line_index.append(i)
+            elif pre_line is None: # 最初の縦線
+                print(line)
                 pre_line = line
+                vertical_line_index.append(i)
             else:
+                """削除するラインの条件を設定"""
                 # 傾きの角度を比較
                 condition1 = int(
                     abs(Calculator.calculate_slope(line)-Calculator.calculate_slope(pre_line))) < diff_a_thre
@@ -248,26 +233,48 @@ class EditNormalMethod:
                 condition2 = Calculator.distance_point_to_line(pre_line, line[:2]) < dis_thre\
                     and Calculator.distance_point_to_line(pre_line, line[2:]) < dis_thre
 
+                """削除するラインのindexを保持"""
                 if condition1 and condition2:
-                    delete_index.append(i)
                     continue
                 else:
-                    # print("")
-                    # print(Calculator.distance_point_to_line(pre_line, line[:2]))
+                    print(line)
+                    vertical_line_index.append(i)
                     pre_line = line
 
-            # ラインが水平か垂直かで分類
-            if Calculator.calculate_slope(line) > 45:  # 縦
-                vertical_line_index.append(i)
-            else:  # 横
-                horizontal_line_index.append(i)
+        # 横線用2
+        horizontal_lines = []
+        delete_index_horizontal = []
+        pre_line = None
+        if len(horizontal_line_index) > 1:
+            horizontal_lines = vertical_lines[horizontal_line_index]
+            horizontal_lines = horizontal_lines[np.argsort(horizontal_lines[:, 1])]
+            # 横線だけを見ていく
+            for i, line in enumerate(horizontal_lines):
+                if pre_line is None: # 最初の縦線
+                    pre_line = line
+                    continue
+                else:
+                    """削除するラインの条件を設定"""
+                    # 傾きの角度を比較
+                    condition1 = int(
+                        abs(Calculator.calculate_slope(line)-Calculator.calculate_slope(pre_line))) < diff_a_thre
+                    # ライン同士の距離で比較
+                    condition2 = Calculator.distance_point_to_line(pre_line, line[:2]) < dis_thre\
+                        and Calculator.distance_point_to_line(pre_line, line[2:]) < dis_thre
+                    """削除するラインのindexを保持"""
+                    if condition1 and condition2:
+                        delete_index_horizontal.append(i)
+                        continue
+            horizontal_lines = horizontal_lines[delete_index_horizontal]
 
-        # ラインの削除
-        vertical_line = lines[vertical_line_index]
-        horizontal_line = lines[horizontal_line_index]
-        lines = np.delete(lines, delete_index, 0)
-        self.log.add(title="Vertical lines", log=vertical_line.shape)  # ログ
-        self.log.add(title="Horizontal lines", log=horizontal_line.shape)  # ログ
+        elif len(horizontal_line_index) == 1:
+            horizontal_lines = vertical_lines[horizontal_line_index]
+        
+        # ラインの選定
+        vertical_lines = vertical_lines[vertical_line_index]
+        lines = np.concatenate([vertical_lines, horizontal_lines])
+        self.log.add(title="Vertical lines", log=vertical_lines.shape)  # ログ
+        self.log.add(title="Horizontal lines", log=horizontal_lines.shape)  # ログ
         self.log.add(title="Mearged Detect lines", log=lines.shape)  # ログ
 
         if Param.work_process and Param.output_image and self.develop:
@@ -276,6 +283,7 @@ class EditNormalMethod:
             colors = cycle([(0, 0, 255), (0, 255, 0),
                            (255, 0, 0)])  # (B, G, R)
             for line in lines:
+                # print(f"line: {line}")
                 x1, y1, x2, y2 = line
                 color = next(colors)
                 cv2.line(detect_line_img, (x1, y1), (x2, y2), color, 5)
@@ -290,7 +298,7 @@ class EditNormalMethod:
             cv2.imwrite(os.path.join(WORK_DIR_PATH,
                         'detect_line_mearged.png'), detect_line_img)
 
-        return lines, vertical_line, horizontal_line
+        return lines, vertical_lines, horizontal_lines
 
     def reverse_vector(self, normal, vector_26_index):
         """ベクトルを逆にする関数."""
@@ -309,7 +317,7 @@ class EditNormalMethod:
             face_axis: 面面を表す法線ベクトルの座標系 ※0(x) or 1(y) or 2(z)
         """
         if lines.shape[0] % 2 != 0:
-            return None, None
+            return normals, None, None
 
         self.log.add(title="face_axis", log=face_axis)
 

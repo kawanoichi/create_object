@@ -29,4 +29,4 @@ class Param:
     # show_normal = True
 
     # meshの表示
-    show_mesh = True
+    # show_mesh = True
