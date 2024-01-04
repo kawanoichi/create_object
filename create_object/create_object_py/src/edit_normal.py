@@ -30,8 +30,7 @@ class EditNormal:
         img = self.edit_normal.draw_point_cloud_axes(
             points, vector_index_list, coordi_index=Coordinate.Z.value)
         # ライン(面)を検出
-        _, _, horizontal_line = self.edit_normal.detect_line(
-            img, coordi_index=Coordinate.X.value)
+        _, _, horizontal_line = self.edit_normal.detect_line(img)
         # 法線ベクトルの修正
         correct_normals, correct_even_index, correct_odd_index = \
             self.edit_normal.inversion_normal(points,
@@ -53,8 +52,7 @@ class EditNormal:
             points, vector_index_list, coordi_index=Coordinate.X.value)
 
         # ライン(面)を検出
-        _, vertical_line, horizontal_line = self.edit_normal.detect_line(
-            img, coordi_index=Coordinate.X.value)
+        _, vertical_line, horizontal_line = self.edit_normal.detect_line(img)
 
         # 側面方向に見ていく(椅子の背もたれの面のベクトル方向はZ)
         correct_normals, correct_even_index, correct_odd_index = \
@@ -64,18 +62,18 @@ class EditNormal:
                                               vector_index_list,
                                               face_axis=Coordinate.Z.value)
 
+        if len(horizontal_line) > 0:
+            correct_normals, _, _ = \
+                self.edit_normal.inversion_normal(points,
+                                                correct_normals,
+                                                horizontal_line,
+                                                vector_index_list,
+                                                face_axis=Coordinate.Y.value)
+
         if correct_normals is None:
             self.log.add(title="Invert Normal Executed", log="False")
         else:
             self.log.add(title="Invert Normal Executed", log="True")
-
-        # 椅子の座る部分の面を見つけて法線ベクトルの補正を加える
-        # correct_normals, correct_normal_index = self.edit_normal.inversion_normal(
-        #     points, normals, horizontal_line, vector_index_list, face_axis=Coordinate.Y.value)
-
-        # if correct_normal_index is None:
-        #     return normals, None
-        # correct_point = points[correct_normal_index]
 
         return correct_normals, correct_even_index, correct_odd_index
 
@@ -115,9 +113,9 @@ class EditNormal:
         normals = self.edit_normal.correct_direct_outside(
             points, normals, vector_index_list,
             coordi_index=Coordinate.Y.value, symmetry="line")
-        # normals = self.edit_normal.correct_direct_outside(
-        #     points, normals, vector_index_list,
-        #     coordi_index=Coordinate.Z.value, symmetry="line")
+        normals = self.edit_normal.correct_direct_outside(
+            points, normals, vector_index_list,
+            coordi_index=Coordinate.Z.value, symmetry="line")
         # return normals, None, None
 
         if category == "0":
@@ -127,6 +125,7 @@ class EditNormal:
             normals, correct_even_index, correct_odd_index = self.chair(
                 work_points, normals, vector_index_list)
         else:
-            raise Exception("Category ID Error")
+            return normals, None, None
+            # raise Exception("Category ID Error")
 
         return normals, correct_even_index, correct_odd_index

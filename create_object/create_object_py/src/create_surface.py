@@ -165,7 +165,6 @@ class MakeSurface:
         normals = np.delete(normals, delete_index, 0)
         # """
 
-
         # 法線ベクトルの更新
         point_cloud.points = o3d.utility.Vector3dVector(points)
         point_cloud.normals = o3d.utility.Vector3dVector(normals)

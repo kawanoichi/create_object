@@ -148,7 +148,7 @@ class EditNormalMethod:
 
         return img
 
-    def detect_line(self, img, coordi_index):
+    def detect_line(self, img):
         """線を検出する関数.
         Args:
             img: 点群を描画した画像
@@ -163,14 +163,11 @@ class EditNormalMethod:
         # cv2.imwrite(os.path.join(WORK_DIR_PATH, 'bitwise.png'), reversed_gray)
 
         # 線分検出
-        if coordi_index == Coordinate.X.value:
-            # 参考: https://way2se.ringtrees.com/py_cv2-004/#toc7
-            lines = cv2.HoughLinesP(reversed_gray, rho=1,
-                                    theta=np.pi/360, threshold=160,
-                                    minLineLength=int(img.shape[0]*0.25), maxLineGap=200)
-            lines = lines[:, 0, :]
-        else:
-            raise
+        # 参考: https://way2se.ringtrees.com/py_cv2-004/#toc7
+        lines = cv2.HoughLinesP(reversed_gray, rho=1,
+                                theta=np.pi/360, threshold=150,
+                                minLineLength=int(img.shape[0]*0.25), maxLineGap=200)
+        lines = lines[:, 0, :]
 
         # 線が見つからない場合
         if lines is None:
@@ -179,7 +176,7 @@ class EditNormalMethod:
                 cv2.imwrite(os.path.join(WORK_DIR_PATH,
                             'detect_line.png'), detect_line_img)
             self.log.add(title="Detect lines", log="None")  # ログ
-            return None
+            return None, None, None
         self.log.add(title="Detect lines", log=lines.shape)  # ログ
 
         # 作業用: 検出したすべての線の表示
@@ -201,7 +198,6 @@ class EditNormalMethod:
         - 描画して確かめた感じ、threの数値が高いほうが水平な気がする
         """
         # lineマージ用
-        diff_a_thre = 20  # 傾き(度数法)の閾値
         diff_coordi_thre = int(img.shape[0] / 50)  # x1座標の閾値
         dis_thre = int(img.shape[0] / 40)  # 直線と点の距離の閾値
         self.log.add(title="diff_coordi_thre", log=diff_coordi_thre)  # ログ
@@ -216,65 +212,57 @@ class EditNormalMethod:
         # 縦線だけを見ていく
         for i, line in enumerate(vertical_lines):
             # 横線は無視
-            # print(f"i: {i}, Calculator.calculate_slope(line): {Calculator.calculate_slope(line)}")
             if Calculator.calculate_slope(line) < 45:
-                # print(line)
                 horizontal_line_index.append(i)
-            elif pre_line is None: # 最初の縦線
-                print(line)
+            elif pre_line is None:  # 最初の縦線
                 pre_line = line
                 vertical_line_index.append(i)
             else:
-                """削除するラインの条件を設定"""
-                # 傾きの角度を比較
-                condition1 = int(
-                    abs(Calculator.calculate_slope(line)-Calculator.calculate_slope(pre_line))) < diff_a_thre
+                """採用するラインの条件を設定"""
                 # ライン同士の距離で比較
-                condition2 = Calculator.distance_point_to_line(pre_line, line[:2]) < dis_thre\
-                    and Calculator.distance_point_to_line(pre_line, line[2:]) < dis_thre
+                condition = Calculator.distance_point_to_line(pre_line, line[:2]) > dis_thre\
+                    or Calculator.distance_point_to_line(pre_line, line[2:]) > dis_thre
 
                 """削除するラインのindexを保持"""
-                if condition1 and condition2:
-                    continue
-                else:
-                    print(line)
+                if condition:
                     vertical_line_index.append(i)
                     pre_line = line
 
         # 横線用2
+        self.log.add(title="len(horizontal_line_index)",
+                     log=len(horizontal_line_index))
         horizontal_lines = []
-        delete_index_horizontal = []
+        horizontal_index = []
         pre_line = None
         if len(horizontal_line_index) > 1:
             horizontal_lines = vertical_lines[horizontal_line_index]
-            horizontal_lines = horizontal_lines[np.argsort(horizontal_lines[:, 1])]
+            horizontal_lines = horizontal_lines[np.argsort(
+                horizontal_lines[:, 1])]
             # 横線だけを見ていく
             for i, line in enumerate(horizontal_lines):
-                if pre_line is None: # 最初の縦線
+                if pre_line is None:  # 最初の縦線
                     pre_line = line
-                    continue
+                    horizontal_index.append(i)
                 else:
-                    """削除するラインの条件を設定"""
-                    # 傾きの角度を比較
-                    condition1 = int(
-                        abs(Calculator.calculate_slope(line)-Calculator.calculate_slope(pre_line))) < diff_a_thre
+                    """採用するラインの条件を設定"""
                     # ライン同士の距離で比較
-                    condition2 = Calculator.distance_point_to_line(pre_line, line[:2]) < dis_thre\
-                        and Calculator.distance_point_to_line(pre_line, line[2:]) < dis_thre
+                    condition = Calculator.distance_point_to_line(pre_line, line[:2]) > dis_thre\
+                        or Calculator.distance_point_to_line(pre_line, line[2:]) > dis_thre
                     """削除するラインのindexを保持"""
-                    if condition1 and condition2:
-                        delete_index_horizontal.append(i)
-                        continue
-            horizontal_lines = horizontal_lines[delete_index_horizontal]
+                    if condition:
+                        horizontal_index.append(i)
+                        pre_line = line
+            horizontal_lines = horizontal_lines[horizontal_index]
 
         elif len(horizontal_line_index) == 1:
             horizontal_lines = vertical_lines[horizontal_line_index]
-        
+
         # ラインの選定
         vertical_lines = vertical_lines[vertical_line_index]
         lines = np.concatenate([vertical_lines, horizontal_lines])
         self.log.add(title="Vertical lines", log=vertical_lines.shape)  # ログ
-        self.log.add(title="Horizontal lines", log=horizontal_lines.shape)  # ログ
+        self.log.add(title="Horizontal lines",
+                     log=horizontal_lines.shape)  # ログ
         self.log.add(title="Mearged Detect lines", log=lines.shape)  # ログ
 
         if Param.work_process and Param.output_image and self.develop:
@@ -283,7 +271,6 @@ class EditNormalMethod:
             colors = cycle([(0, 0, 255), (0, 255, 0),
                            (255, 0, 0)])  # (B, G, R)
             for line in lines:
-                # print(f"line: {line}")
                 x1, y1, x2, y2 = line
                 color = next(colors)
                 cv2.line(detect_line_img, (x1, y1), (x2, y2), color, 5)
@@ -300,13 +287,16 @@ class EditNormalMethod:
 
         return lines, vertical_lines, horizontal_lines
 
-    def reverse_vector(self, normal, vector_26_index):
+    def reverse_vector(self, normal, vector_26_index, face_axis=None):
         """ベクトルを逆にする関数."""
         vector = self.vectors_26[vector_26_index]
         reversed_vector = normal.copy()
-        for i, element in enumerate(vector):
-            if element != 0:
-                reversed_vector[i] *= -1
+        if face_axis is None:
+            for i, element in enumerate(vector):
+                if element != 0:
+                    reversed_vector[i] *= -1
+        else:
+            reversed_vector[face_axis] *= -1
         return reversed_vector
 
     def inversion_normal(self, points, normals, lines, vector_index_list, face_axis):
@@ -364,14 +354,16 @@ class EditNormalMethod:
                     if near_line_index % 2 == 0:
                         if normals[i, face_axis] > 0:
                             normals[i] = \
-                                self.reverse_vector(normals[i], vec_index)
+                                self.reverse_vector(
+                                    normals[i], vec_index, face_axis)
                             correct_even_index.append(i)  # 赤
 
                     # 奇数本の場合(Odd Number)
                     else:
                         if normals[i, face_axis] < 0:
                             normals[i] = \
-                                self.reverse_vector(normals[i], vec_index)
+                                self.reverse_vector(
+                                    normals[i], vec_index, face_axis)
                             correct_odd_index.append(i)  # 青
 
         return normals, correct_even_index, correct_odd_index
