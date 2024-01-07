@@ -153,6 +153,29 @@ class MyPlt:
                 ax.quiver(points[i, 0], points[i, 1], points[i, 2],
                           normals[i, 0]*scale, normals[i, 1]*scale, normals[i, 2]*scale, color='r', length=1.0, normalize=True)
 
+    def show_vector(self, vector, title="None") -> None:
+        """原点を視点とした３次元ベクトルを表示する関数."""
+
+        graph_size = 1.5
+
+        fig = plt.figure(figsize=(6, 6))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.grid()
+        ax.set_xlabel("x", fontsize=16)
+        ax.set_ylabel("y", fontsize=16)
+        ax.set_zlabel("z", fontsize=16)
+        ax.set_xlim(-graph_size, graph_size)
+        ax.set_ylim(-graph_size, graph_size)
+        ax.set_zlim(-graph_size, graph_size)
+
+        # 原点Oを始点にベクトル(-2,3,2)を配置
+        for v in vector:
+            ax.quiver(0, 0, 0, v[0], v[1], v[2],
+                      color="red", length=1,
+                      arrow_length_ratio=0.1)
+
+        plt.show()
+
     def show_result(self) -> None:
         plt.show()
 

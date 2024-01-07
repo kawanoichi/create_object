@@ -49,6 +49,9 @@ class MakeSurface:
         # 26方位ベクトルの作成([x, y, z])
         self.check_exist(vectors_26_path)
         self.vectors_26 = np.load(vectors_26_path)
+        if Param.show_vector26:
+            self.myplt.show_vector(self.vectors_26, title="vectors_26")
+            return
 
     @staticmethod
     def check_exist(path):
@@ -121,23 +124,18 @@ class MakeSurface:
 
         """法線ベクトルの作成"""
         # 法線情報を計算
-        point_cloud.estimate_normals(
-            # search_param=o3d.geometry.KDTreeSearchParamHybrid(
-            #     radius=1, max_nn=10)
-            # search_param=o3d.geometry.KDTreeSearchParamKNN(
-            #     knn=20)
-        )
-        # self.myplt.show_normals(points, normals, title="Normals")  # グラフの追加
+        point_cloud.estimate_normals()
 
-        """法線ベクトルの編集"""
+        """法線ベクトルの修正"""
         normals = np.asarray(point_cloud.normals)  # numpy配列に変換
+
         if (Param.edit_normal and develop) or execute_web:
             # メッシュ変数メソッドの実行
             edit = EditNormal(vectors_26=self.vectors_26,
                               develop=develop,
                               log=self.log)
-            edited_normals, correct_even_index, correct_odd_index = edit.main(
-                category, points, normals)
+            # edited_normals, correct_even_index, correct_odd_index, correct_index = \
+            edited_normals = edit.main(category, points, normals)
 
             # 法線ベクトルの更新
             if edited_normals is not None:
@@ -146,15 +144,19 @@ class MakeSurface:
             else:
                 self.log.add(title="Correct Normals", log="False")
 
-            if correct_even_index is not None and correct_odd_index is not None:
-                self.log.add(title="correct_even_index len",
-                             log=len(correct_even_index))
-                self.log.add(title="correct_odd_index len",
-                             log=len(correct_odd_index))
-                self.myplt.show_correct_point_2D(
-                    points, correct_even_index, correct_odd_index, title="Correct Point 2D")
-                self.myplt.show_correct_point(
-                    points, correct_even_index, correct_odd_index, title="Correct Point 3D")
+            # if correct_even_index is not None and correct_odd_index is not None:
+            #     self.log.add(title="correct_even_index len",
+            #                  log=len(correct_even_index))
+            #     self.log.add(title="correct_odd_index len",
+            #                  log=len(correct_odd_index))
+            #     self.myplt.show_correct_point_2D(
+            #         points, correct_even_index, correct_odd_index, title="Correct Point 2D")
+            #     self.myplt.show_correct_point(
+            #         points, correct_even_index, correct_odd_index, title="Correct Point 3D")
+
+            # if correct_index is not None:
+            #     self.myplt.show_point(
+            #         points[correct_index], title="Correct Point")
 
         """作業用
         delete_index = []
@@ -174,6 +176,7 @@ class MakeSurface:
         # point_cloud.orient_normals_consistent_tangent_plane(10)
         distances = point_cloud.compute_nearest_neighbor_distance()  # 近傍距離を計算
         avg_dist = np.mean(distances)  # 近傍距離の平均
+        self.log.add(title="近傍距離の平均", log=avg_dist)
         radius = 2*avg_dist  # 半径
         radii = [radius, radius * 1.5, radius * 2]  # [半径,直径]
         radii = o3d.utility.DoubleVector(radii)  # numpy配列 >> open3D形式
@@ -196,6 +199,13 @@ class MakeSurface:
 
             # ディスプレイのサイズを取得
             screen_size = [2560//3, 1440//3]
+
+            # 点群の表示
+            if Param.show_point:
+                # ウィンドウの幅と高さをディスプレイのサイズに設定して描画
+                o3d.visualization.draw_geometries(
+                    [point_cloud], width=screen_size[0], height=screen_size[1])
+
             # 法線の表示
             if Param.show_normal:
                 # ウィンドウの幅と高さをディスプレイのサイズに設定して描画
@@ -250,6 +260,7 @@ if __name__ == "__main__":
         execute_time = time.time() - start
         ms.log.add(title="Execution time", log=str(execute_time)[:5]+"s")
     finally:
+        # pass
         ms.log.show()
 
     print("終了")

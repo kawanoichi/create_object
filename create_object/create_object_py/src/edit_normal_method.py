@@ -40,7 +40,8 @@ class EditNormalMethod:
         self.left_vector_index = np.where(
             (self.vectors_26 == (self.right_vector * -1)).all(axis=1))[0][0]
 
-    def correct_direct_outside(self, points, normals, vector_index_list, coordi_index: int, symmetry="point"):
+    def correct_direct_outside(self, points, normals, vector_index_list,
+                               coordi_index: int, symmetry="point"):
         """法線ベクトルを外側に向ける関数.
         Args:
             points: 点群座標
@@ -66,11 +67,12 @@ class EditNormalMethod:
                     normals[i] = self.reverse_vector(normals[i], vec_index)
                 if symmetry == "line":
                     normals[i, coordi_index] *= -1
-        return normals
+        # return normals
 
-    def draw_point_cloud_axes(self, points, vector_index_list, coordi_index: int):
+    def draw_point_cloud_axes(self, points, vector_index_list, coordi_index: int, all_point=False):
         """各座標軸に対して描画する関数."""
 
+        """画像のサイズを決定する"""
         # それぞれの軸の最大値を求めていく
         if coordi_index == Coordinate.X.value:
             max_y = abs(np.max(points[:, 1]))
@@ -104,13 +106,15 @@ class EditNormalMethod:
         # 点群の原点を画像の中心に合わせる
         points += int(img_size/2)
 
+        """画像に点を記述"""
         # NOTE: img[y,x]に注意
         # 側面画像
         correct_value = 2
         if coordi_index == Coordinate.X.value:
             for point, vec_index in zip(points, vector_index_list):
-                if vec_index == self.right_vector_index or \
-                        vec_index == self.left_vector_index:
+                if not all_point and (
+                        vec_index == self.right_vector_index or
+                        vec_index == self.left_vector_index):
                     continue
                 _, y, z = point
                 # 点を描画
@@ -120,8 +124,9 @@ class EditNormalMethod:
         # 上面画像
         elif coordi_index == Coordinate.Y.value:
             for point, vec_index in zip(points, vector_index_list):
-                if vec_index == self.upper_vector_index or \
-                        vec_index == self.lower_vector_index:
+                if not all_point and (
+                    vec_index == self.upper_vector_index or
+                        vec_index == self.lower_vector_index):
                     continue
                 x, _, z = point
                 # 点を描画
@@ -131,8 +136,9 @@ class EditNormalMethod:
         # 正面画像
         elif coordi_index == Coordinate.Z.value:
             for point, vec_index in zip(points, vector_index_list):
-                if vec_index == self.front_vector_index or \
-                        vec_index == self.back_vector_index:
+                if not all_point and (
+                    vec_index == self.front_vector_index or
+                        vec_index == self.back_vector_index):
                     continue
                 x, y, _ = point
                 # 点を描画
@@ -148,7 +154,7 @@ class EditNormalMethod:
 
         return img
 
-    def detect_line(self, img):
+    def detect_line(self, img, line_thre=150):
         """線を検出する関数.
         Args:
             img: 点群を描画した画像
@@ -165,7 +171,7 @@ class EditNormalMethod:
         # 線分検出
         # 参考: https://way2se.ringtrees.com/py_cv2-004/#toc7
         lines = cv2.HoughLinesP(reversed_gray, rho=1,
-                                theta=np.pi/360, threshold=150,
+                                theta=np.pi/180, threshold=line_thre,
                                 minLineLength=int(img.shape[0]*0.25), maxLineGap=200)
         lines = lines[:, 0, :]
 
@@ -231,7 +237,7 @@ class EditNormalMethod:
         # 横線用2
         self.log.add(title="len(horizontal_line_index)",
                      log=len(horizontal_line_index))
-        horizontal_lines = []
+        horizontal_lines = np.array([]).reshape([0, 4])
         horizontal_index = []
         pre_line = None
         if len(horizontal_line_index) > 1:
@@ -259,7 +265,10 @@ class EditNormalMethod:
 
         # ラインの選定
         vertical_lines = vertical_lines[vertical_line_index]
+        horizontal_lines = np.array(horizontal_lines)  # list to numpy
+
         lines = np.concatenate([vertical_lines, horizontal_lines])
+
         self.log.add(title="Vertical lines", log=vertical_lines.shape)  # ログ
         self.log.add(title="Horizontal lines",
                      log=horizontal_lines.shape)  # ログ
@@ -271,7 +280,7 @@ class EditNormalMethod:
             colors = cycle([(0, 0, 255), (0, 255, 0),
                            (255, 0, 0)])  # (B, G, R)
             for line in lines:
-                x1, y1, x2, y2 = line
+                x1, y1, x2, y2 = map(int, line)
                 color = next(colors)
                 cv2.line(detect_line_img, (x1, y1), (x2, y2), color, 5)
             # diff_coordi_threの閾値の幅の確認
@@ -306,8 +315,8 @@ class EditNormalMethod:
             vector_index_list: 26方位に分類したときのindexを格納した配列
             face_axis: 面面を表す法線ベクトルの座標系 ※0(x) or 1(y) or 2(z)
         """
-        if lines.shape[0] % 2 != 0:
-            return normals, None, None
+        # if lines.shape[0] % 2 != 0:
+        #     return normals, None, None
 
         self.log.add(title="face_axis", log=face_axis)
 
@@ -353,17 +362,136 @@ class EditNormalMethod:
                     # 偶数本の場合(Even Number)
                     if near_line_index % 2 == 0:
                         if normals[i, face_axis] > 0:
-                            normals[i] = \
-                                self.reverse_vector(
-                                    normals[i], vec_index, face_axis)
+                            normals[i] = self.reverse_vector(
+                                normals[i], vec_index, face_axis)
                             correct_even_index.append(i)  # 赤
 
                     # 奇数本の場合(Odd Number)
                     else:
                         if normals[i, face_axis] < 0:
-                            normals[i] = \
-                                self.reverse_vector(
-                                    normals[i], vec_index, face_axis)
+                            normals[i] = self.reverse_vector(
+                                normals[i], vec_index, face_axis)
                             correct_odd_index.append(i)  # 青
 
-        return normals, correct_even_index, correct_odd_index
+        # return normals, correct_even_index, correct_odd_index
+
+    def correct_edge_point(self, points, normals, axis=Coordinate.X.value):
+        """一番端にある点群を外側に向ける関数.
+
+        NOTE
+        行ごとの端を見ると斜めの判定を間違ってしまうため一番端の座標のみを見る
+
+        """
+
+        p_range = 10
+        max = np.amax(points[:, axis], axis=0)
+        min = np.amin(points[:, axis], axis=0)
+
+        condision1 = max - p_range < points[:, axis]
+        condision2 = min + p_range > points[:, axis]
+        outside_index_max = np.where(condision1)[0]
+        outside_index_min = np.where(condision2)[0]
+
+        # 修正するベクトルの作成
+        truth_normal = np.zeros(3)
+        truth_normal[axis] += 1
+
+        for index in outside_index_max:
+            normals[index] *= 0
+            normals[index, axis] += 1
+
+        for index in outside_index_min:
+            normals[index] *= 0
+            normals[index, axis] -= 1
+
+    def correct_edge_point_detail(self, points, normals, correct_axis=Coordinate.X.value):
+        """一番端にある点群を外側に向ける関数.
+        未完成
+        うまくできていない理由が良く分かっていない
+        同じ行に点が一個だった場合の判定が難しい？
+
+
+        """
+
+        range_thre = 5
+
+        if correct_axis == Coordinate.X.value or correct_axis == Coordinate.Z.value:
+            # 行としてみる軸の決定
+            line_axis = Coordinate.Y.value
+        elif correct_axis == Coordinate.Y.value:
+            line_axis = Coordinate.Z.value
+
+        axis_max = np.amax(points[:, line_axis], axis=0)
+        axis_min = np.amin(points[:, line_axis], axis=0)
+
+        correct_index = []
+
+        for line_coordi in range(axis_min, axis_max):
+            # 行にある点を抽出
+            range_points_index = np.where(
+                points[:, line_axis] == line_coordi)[0]
+            if range_points_index.shape[0] == 0:
+                continue
+
+            # 行の中の最大値、最小値を求める
+            max_point_index = range_points_index[np.argmax(
+                points[range_points_index, line_axis])]
+            min_point_index = range_points_index[np.argmin(
+                points[range_points_index, line_axis])]
+
+            print(f"range_points_index: {range_points_index}")
+            count = 0
+            for index in range_points_index:
+                if points[index, line_axis] > points[max_point_index, line_axis]-range_thre:
+                    # print(points[index, line_axis], points[max_point_index, line_axis]-range_thre)
+                    normals[index] *= 0
+                    normals[index, line_axis] += 1
+                    correct_index.append(index)
+                elif points[index, line_axis] < points[min_point_index, line_axis]+range_thre:
+                    normals[index] *= 0
+                    normals[index, line_axis] -= 1
+                    correct_index.append(index)
+                    count += 1
+                # else:
+            # if count != 0: print(count)
+
+            # condition2 = max - p_range < points[:, axis] # 最大
+            # condition3 = points[:, axis] < p_range + min # 最小
+
+            # # 法線ベクトルの補正
+            # max_range_index = np.where(condition1 & condition2)[0]
+            # normals[max_range_index] *= 0
+            # normals[max_range_index, axis] += 1
+
+            # # 法線ベクトルの補正
+            # min_range_index = np.where(condition1 & condition3)[0]
+            # normals[min_range_index] *= 0
+            # normals[min_range_index, axis] += 1
+
+            # # y行の点を抽出
+            # range_points_index = np.where(points[:, Coordinate.Y.value] == y)[0]
+            # if range_points_index.shape[0] == 0:
+            #     continue
+            # # 特定のy座標に対応する行のデータ
+            # selected_rows = points[range_points_index]
+
+            # # 最大の要素のインデックスを取得
+            # max_index_within_selected_rows = np.argmax(selected_rows[:, Coordinate.Y.value])
+            # # 元の配列での最大の要素のインデックス
+            # max_index = range_points_index[max_index_within_selected_rows]
+            # # 法線ベクトルの補正
+            # normals[max_index] *= 0
+            # normals[max_index, axis] += 1
+
+            # # 最小の要素のインデックスを取得
+            # min_index_within_selected_rows = np.argmin(selected_rows[:, Coordinate.Y.value])
+            # # 元の配列での最大の要素のインデックス
+            # min_index = range_points_index[min_index_within_selected_rows]
+            # # 法線ベクトルの補正
+            # normals[min_index] *= 0
+            # normals[min_index, axis] -= 1
+
+        # correct_index.append(max_range_index)
+        # correct_index.append(min_range_index)
+
+        return normals, correct_index

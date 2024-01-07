@@ -6,9 +6,11 @@ class Param:
     初期化用
     """
     edit_normal = False
+    show_vector26 = False
     work_process = False
     output_image = False
     point_only = False
+    show_point = False
     show_normal = False
     show_mesh = False
 
@@ -19,6 +21,7 @@ class Param:
     edit_normal = True
 
     # 作業過程のグラフの表示
+    # show_vector26 = True
     work_process = True
     output_image = True
 
@@ -26,7 +29,10 @@ class Param:
     # point_only = True
 
     # 法線ベクトルの表示
-    # show_normal = True
+    # show_point = True
+
+    # 法線ベクトルの表示
+    show_normal = True
 
     # meshの表示
-    show_mesh = True
+    # show_mesh = True
