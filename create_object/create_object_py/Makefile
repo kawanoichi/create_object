@@ -29,3 +29,6 @@ rm:
 
 npy_rm:
 	rm data/predict_points/*/*.npy
+
+zikken:
+	poetry run python3 src/zikken.py

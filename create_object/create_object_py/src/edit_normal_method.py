@@ -315,12 +315,10 @@ class EditNormalMethod:
             vector_index_list: 26方位に分類したときのindexを格納した配列
             face_axis: 面面を表す法線ベクトルの座標系 ※0(x) or 1(y) or 2(z)
         """
-        # if lines.shape[0] % 2 != 0:
-        #     return normals, None, None
 
-        self.log.add(title="face_axis", log=face_axis)
+        if lines.shape[0] == 1:
+            return
 
-        lines = lines[np.argsort(lines[:, 0])]
         if face_axis == Coordinate.X.value:
             raise ()
 
@@ -340,6 +338,14 @@ class EditNormalMethod:
                 self.vectors_26[:, face_axis] == -1)[0]
 
         lines = lines[np.argsort(lines[:, line_axis])]
+
+        if lines.shape[0] % 2 == 1:
+            diff_s = abs(lines[0, 0] - lines[1, 0])
+            diff_e = abs(lines[-1, 0] - lines[-2, 0])
+            if diff_s < diff_e:
+                lines = lines[:-1]
+            else:
+                lines = lines[1:]
 
         correct_even_index = []
         correct_odd_index = []
