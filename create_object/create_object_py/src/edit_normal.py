@@ -154,6 +154,7 @@ class EditNormal:
 
         # 椅子
         elif category == "1":
+            # True False
             self.correct_process1(points, normals, vector_index_list,
                                   X=True, Y=True, Z=True)
             self.correct_process2(work_points, normals, vector_index_list,

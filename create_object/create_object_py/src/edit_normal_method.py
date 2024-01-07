@@ -315,8 +315,18 @@ class EditNormalMethod:
             vector_index_list: 26方位に分類したときのindexを格納した配列
             face_axis: 面面を表す法線ベクトルの座標系 ※0(x) or 1(y) or 2(z)
         """
-
-        if lines.shape[0] == 1:
+        if lines.shape[0] == 1 and face_axis == Coordinate.Y.value:
+            diff_coordi_thre = 40
+            line_axis = 1
+            target_vec_index = np.where(self.vectors_26[:, face_axis] == -1)[0]
+            for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
+                # 対象としている法線ベクトルの場合
+                if np.any(target_vec_index == vec_index):
+                    # 各ラインについて見ていく
+                    dis = abs(point[face_axis] - lines[0, line_axis])  # ラインとの距離を算出
+                    # ラインから点が近い場合
+                    if dis < diff_coordi_thre and normals[i, face_axis] < 0:
+                        normals[i, face_axis] *= -1
             return
 
         if face_axis == Coordinate.X.value:
@@ -347,10 +357,11 @@ class EditNormalMethod:
             else:
                 lines = lines[1:]
 
-        correct_even_index = []
-        correct_odd_index = []
+        # ラインと点の距離の閾値
         # 閾値は実際にやってうまく言った数値
         diff_coordi_thre = 30
+        correct_even_index = []
+        correct_odd_index = []
         for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
             # 対象としている法線ベクトルの場合
             if np.any(target_posi_vec_index == vec_index) or np.any(target_nega_vec_index == vec_index):
