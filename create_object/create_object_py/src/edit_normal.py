@@ -64,7 +64,7 @@ class EditNormal:
 
     def correct_process3(self, points, normals):
         """法線ベクトル修正処理３.
-        法線ベクトルを外側に向ける
+        端の座標の点の法線ベクトルを外側に向ける
         """
         self.edit_normal.correct_edge_point(
             points, normals, Coordinate.X.value)
@@ -72,45 +72,6 @@ class EditNormal:
             points, normals, Coordinate.Y.value)
         self.edit_normal.correct_edge_point(
             points, normals, Coordinate.Z.value)
-
-    # def chair(self, points, normals, vector_index_list):
-    #     """椅子の法線ベクトルを修正"""
-    #     # 側面の画像を描画する
-    #     img = self.edit_normal.draw_point_cloud_axes(
-    #         points, vector_index_list, coordi_index=Coordinate.X.value, all_point=True)
-
-    #     # ライン(面)を検出
-    #     _, vertical_line, horizontal_line = self.edit_normal.detect_line(
-    #         img, line_thre=110)
-
-    #     # 側面方向に見ていく(椅子の背もたれの面のベクトル方向はZ)
-    #     correct_normals, correct_even_index, correct_odd_index = \
-    #         self.edit_normal.inversion_normal(points,
-    #                                           normals,
-    #                                           vertical_line,
-    #                                           vector_index_list,
-    #                                           face_axis=Coordinate.Z.value)
-
-    #     if len(horizontal_line) > 0:
-    #         correct_normals, _, _ = \
-    #             self.edit_normal.inversion_normal(points,
-    #                                               correct_normals,
-    #                                               horizontal_line,
-    #                                               vector_index_list,
-    #                                               face_axis=Coordinate.Y.value)
-    #     if len(horizontal_line) > 0:
-    #         correct_normals, _, _ = \
-    #             self.edit_normal.inversion_normal(points,
-    #                                               correct_normals,
-    #                                               vertical_line,
-    #                                               vector_index_list,
-    #                                               face_axis=Coordinate.Y.value)
-    #     if correct_normals is None:
-    #         self.log.add(title="Invert Normal Executed", log="False")
-    #     else:
-    #         self.log.add(title="Invert Normal Executed", log="True")
-
-    #     return correct_normals, correct_even_index, correct_odd_index
 
     def main(self, category: str, points: np.ndarray, normals=None) -> None:
         """法線ベクトルを修正する関数.
@@ -144,13 +105,14 @@ class EditNormal:
 
         # 飛行機
         if category == "0":
+            # True False
             self.correct_process1(points, normals, vector_index_list,
-                                  X=True, Y=True, Z=True)
-            self.correct_process2(work_points, normals, vector_index_list,
-                                  coordi_index=Coordinate.Z.value,
-                                  line_thre=140,
-                                  execute_vertical=False, execute_horizonta=True)
-            self.correct_process3(work_points, normals)
+                                  X=True, Y=False, Z=False)
+            # self.correct_process2(work_points, normals, vector_index_list,
+            #                       coordi_index=Coordinate.Z.value,
+            #                       line_thre=140,
+            #                       execute_vertical=False, execute_horizonta=True)
+            # self.correct_process3(work_points, normals)
 
         # 椅子
         elif category == "1":

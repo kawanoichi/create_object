@@ -57,16 +57,27 @@ class EditNormalMethod:
             self.vectors_26[:, coordi_index] == -1)[0]
 
         for i, vec_index in enumerate(vector_index_list):
-            if np.any(target_nega_vec_index == vec_index) and points[i, coordi_index] > 0:
+            if points[i, coordi_index] > 0 and normals[i, coordi_index] < 0:
                 if symmetry == "point":
                     normals[i] = self.reverse_vector(normals[i], vec_index)
                 if symmetry == "line":
                     normals[i, coordi_index] *= -1
-            elif np.any(target_posi_vec_index == vec_index) and points[i, coordi_index] < 0:
+            elif points[i, coordi_index] < 0 and normals[i, coordi_index] > 0:
                 if symmetry == "point":
                     normals[i] = self.reverse_vector(normals[i], vec_index)
                 if symmetry == "line":
                     normals[i, coordi_index] *= -1
+        # for i, vec_index in enumerate(vector_index_list):
+        #     if np.any(target_nega_vec_index == vec_index) and points[i, coordi_index] > 0:
+        #         if symmetry == "point":
+        #             normals[i] = self.reverse_vector(normals[i], vec_index)
+        #         if symmetry == "line":
+        #             normals[i, coordi_index] *= -1
+        #     elif np.any(target_posi_vec_index == vec_index) and points[i, coordi_index] < 0:
+        #         if symmetry == "point":
+        #             normals[i] = self.reverse_vector(normals[i], vec_index)
+        #         if symmetry == "line":
+        #             normals[i, coordi_index] *= -1
         # return normals
 
     def draw_point_cloud_axes(self, points, vector_index_list, coordi_index: int, all_point=False):
@@ -400,7 +411,7 @@ class EditNormalMethod:
 
         """
 
-        p_range = 10
+        p_range = 20
         max = np.amax(points[:, axis], axis=0)
         min = np.amin(points[:, axis], axis=0)
 
