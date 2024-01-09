@@ -41,7 +41,7 @@ class Calculator:
 
     @staticmethod
     def calculate_slope(line):
-        """傾きの角度の違いを求める."""
+        """傾きの角度を求める."""
         # 傾きの差が閾値以下であればほぼ同じとみなす
         line_x = line[2] - line[0]
         line_y = line[3] - line[1]

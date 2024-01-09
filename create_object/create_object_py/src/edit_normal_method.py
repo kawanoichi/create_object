@@ -50,11 +50,6 @@ class EditNormalMethod:
             coordi_index: 外側に向ける座標軸
             symmetry: 線対称or点対称(line or point)
         """
-        """条件を決定"""
-        target_posi_vec_index = np.where(
-            self.vectors_26[:, coordi_index] == 1)[0]
-        target_nega_vec_index = np.where(
-            self.vectors_26[:, coordi_index] == -1)[0]
 
         for i, vec_index in enumerate(vector_index_list):
             if points[i, coordi_index] > 0 and normals[i, coordi_index] < 0:
@@ -67,18 +62,6 @@ class EditNormalMethod:
                     normals[i] = self.reverse_vector(normals[i], vec_index)
                 if symmetry == "line":
                     normals[i, coordi_index] *= -1
-        # for i, vec_index in enumerate(vector_index_list):
-        #     if np.any(target_nega_vec_index == vec_index) and points[i, coordi_index] > 0:
-        #         if symmetry == "point":
-        #             normals[i] = self.reverse_vector(normals[i], vec_index)
-        #         if symmetry == "line":
-        #             normals[i, coordi_index] *= -1
-        #     elif np.any(target_posi_vec_index == vec_index) and points[i, coordi_index] < 0:
-        #         if symmetry == "point":
-        #             normals[i] = self.reverse_vector(normals[i], vec_index)
-        #         if symmetry == "line":
-        #             normals[i, coordi_index] *= -1
-        # return normals
 
     def draw_point_cloud_axes(self, points, vector_index_list, coordi_index: int, all_point=False):
         """各座標軸に対して描画する関数."""
@@ -217,11 +200,17 @@ class EditNormalMethod:
         # lineマージ用
         diff_coordi_thre = int(img.shape[0] / 50)  # x1座標の閾値
         dis_thre = int(img.shape[0] / 40)  # 直線と点の距離の閾値
+        # print(f"dis_thre: {dis_thre}")
+        # dis_thre = int(img.shape[0] / 25)  # 直線と点の距離の閾値
+        # print(f"dis_thre: {dis_thre}")
         self.log.add(title="diff_coordi_thre", log=diff_coordi_thre)  # ログ
         self.log.add(title="dis_thre", log=dis_thre)  # ログ
         pre_line = None
         # 縦線用
         vertical_lines = lines[np.argsort(lines[:, 0])]
+        # print(f"np.argsort(lines[:, 0]): {np.argsort(lines[:, 0])}")
+        # print(f"np.argsort(lines[:, 0])[::-1]: {np.argsort(lines[:, 0])[::-1]}")
+        # vertical_lines = lines[np.argsort(lines[:, 0])[::-1]]
         vertical_line_index = []
         # 横線用1
         horizontal_line_index = []
@@ -254,7 +243,9 @@ class EditNormalMethod:
         if len(horizontal_line_index) > 1:
             horizontal_lines = vertical_lines[horizontal_line_index]
             horizontal_lines = horizontal_lines[np.argsort(
-                horizontal_lines[:, 1])]
+                horizontal_lines[:, 1])[::-1]]
+            # horizontal_lines = horizontal_lines[np.argsort(
+            #     horizontal_lines[:, 1])]
             # 横線だけを見ていく
             for i, line in enumerate(horizontal_lines):
                 if pre_line is None:  # 最初の縦線
@@ -307,6 +298,23 @@ class EditNormalMethod:
 
         return lines, vertical_lines, horizontal_lines
 
+
+    def organize_line(self, points, lines, face_axis=0):
+        """検出したラインの整理を行う.
+        Args:
+            face_axis: 2次元画像上の面が向いている方向 0(x) or 1(y)
+        """
+        max = np.amax(points[:, face_axis], axis=0)
+        min = np.amin(points[:, face_axis], axis=0)
+
+        slope_list = np.array([])
+        for line in lines:
+            slope = Calculator.calculate_slope(line)
+            slope_list = np.append(slope_list, np.round(slope))
+        
+        return lines
+        
+
     def reverse_vector(self, normal, vector_26_index, face_axis=None):
         """ベクトルを逆にする関数."""
         vector = self.vectors_26[vector_26_index]
@@ -326,20 +334,74 @@ class EditNormalMethod:
             vector_index_list: 26方位に分類したときのindexを格納した配列
             face_axis: 面面を表す法線ベクトルの座標系 ※0(x) or 1(y) or 2(z)
         """
+        # lines = self.organize_line(lines)
+        # exit()
+        
         if lines.shape[0] == 1 and face_axis == Coordinate.Y.value:
-            diff_coordi_thre = 40
-            line_axis = 1
-            target_vec_index = np.where(self.vectors_26[:, face_axis] == -1)[0]
-            for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
-                # 対象としている法線ベクトルの場合
-                if np.any(target_vec_index == vec_index):
-                    # 各ラインについて見ていく
-                    dis = abs(point[face_axis] - lines[0, line_axis])  # ラインとの距離を算出
-                    # ラインから点が近い場合
-                    if dis < diff_coordi_thre and normals[i, face_axis] < 0:
-                        normals[i, face_axis] *= -1
-            return
+            # y1, y2が両方とも正である場合は上にする。
+            # 下の場合は危険だからしないでおく？
+            if lines[0, 0] >= 0 and lines[0, 2] >= 0:
+                diff_coordi_thre = 40
+                line_axis = 1
+                target_vec_index = np.where(self.vectors_26[:, face_axis] == -1)[0]
+                for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
+                    # 対象としている法線ベクトルの場合
+                    if np.any(target_vec_index == vec_index):
+                        # 各ラインについて見ていく
+                        dis = abs(point[face_axis] - lines[0, line_axis])  # ラインとの距離を算出
+                        # ラインから点が近い場合
+                        if dis < diff_coordi_thre and normals[i, face_axis] < 0:
+                            normals[i, face_axis] *= -1
+            return 
 
+        if lines.shape[0] == 2 and face_axis == Coordinate.Y.value:
+            slope_thre = 5
+            slope_list = np.array([])
+            line_dis_thre = 100
+            for i, line in enumerate(lines):
+                slope = Calculator.calculate_slope(line)
+                slope_list = np.append(slope_list, slope)
+            # 平行でない場合
+            if abs(slope_list[0] - slope_list[1]) > slope_thre:
+                return
+            # 平行だけど離れている場合
+            elif abs(lines[0,1] - lines[1,1]) > line_dis_thre:
+                # ベクトルを上にする
+                diff_coordi_thre = 30
+                line_axis = 1
+                target_vec_index = np.where(self.vectors_26[:, face_axis] == -1)[0]
+                for i, point in enumerate(points):
+                # for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
+                    for line in lines:
+                        # 各ラインについて見ていく
+                        dis = abs(point[face_axis] - line[line_axis])  # ラインとの距離を算出
+                        # ラインから点が近い場合
+                        if dis < diff_coordi_thre and normals[i, face_axis] < 0:
+                            # print(f"normals[i, face_axis]:{normals[i, face_axis]}")
+                            normals[i, face_axis] *= -1
+                return 
+        
+        # if lines.shape[0] == 3:
+        if lines.shape[0] == 3 and face_axis == Coordinate.Z.value:
+            
+            # ラインのx軸の中心座標を求める
+            posi_list = np.array([])
+            for i, line in enumerate(lines):
+                x1, _, x2, _ = line
+                posi_list = np.append(posi_list, np.mean([x1, x2]))
+            
+            # ライン動詞の距離を求める
+            diff_posi_list = np.array([])
+            for i in range(1, posi_list.shape[0]):
+                diff_posi = abs(posi_list[i-1]-posi_list[i])
+                diff_posi_list = np.append(diff_posi_list, diff_posi)
+            
+            if diff_posi_list[0] > diff_posi_list[1]:
+                lines = lines[1:]
+            else:
+                lines = lines[:-1]
+            # return    
+        
         if face_axis == Coordinate.X.value:
             raise ()
 
@@ -374,13 +436,19 @@ class EditNormalMethod:
         correct_even_index = []
         correct_odd_index = []
         for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
+            x, y, z = point
             # 対象としている法線ベクトルの場合
             if np.any(target_posi_vec_index == vec_index) or np.any(target_nega_vec_index == vec_index):
                 # 各ラインについて見ていく
                 near_line_index = None
                 min_dis = 1000
                 for j, line in enumerate(lines):
-                    dis = abs(point[face_axis] - line[line_axis])  # ラインとの距離を算出
+                    # dis = abs(point[face_axis] - line[line_axis])  # ラインとの距離を算出
+                    if face_axis == Coordinate.Z.value:
+                        point = np.array([z, y]) 
+                    elif face_axis == Coordinate.Y.value:
+                        point = np.array([x, y]) 
+                    dis = Calculator.distance_point_to_line(line, point)  # ラインとの距離を算出
                     if dis < min_dis:
                         near_line_index = j  # 一番近いラインの更新
                         min_dis = dis
@@ -400,8 +468,6 @@ class EditNormalMethod:
                             normals[i] = self.reverse_vector(
                                 normals[i], vec_index, face_axis)
                             correct_odd_index.append(i)  # 青
-
-        # return normals, correct_even_index, correct_odd_index
 
     def correct_edge_point(self, points, normals, axis=Coordinate.X.value):
         """一番端にある点群を外側に向ける関数.
@@ -467,7 +533,6 @@ class EditNormalMethod:
             min_point_index = range_points_index[np.argmin(
                 points[range_points_index, line_axis])]
 
-            print(f"range_points_index: {range_points_index}")
             count = 0
             for index in range_points_index:
                 if points[index, line_axis] > points[max_point_index, line_axis]-range_thre:
@@ -480,46 +545,5 @@ class EditNormalMethod:
                     normals[index, line_axis] -= 1
                     correct_index.append(index)
                     count += 1
-                # else:
-            # if count != 0: print(count)
-
-            # condition2 = max - p_range < points[:, axis] # 最大
-            # condition3 = points[:, axis] < p_range + min # 最小
-
-            # # 法線ベクトルの補正
-            # max_range_index = np.where(condition1 & condition2)[0]
-            # normals[max_range_index] *= 0
-            # normals[max_range_index, axis] += 1
-
-            # # 法線ベクトルの補正
-            # min_range_index = np.where(condition1 & condition3)[0]
-            # normals[min_range_index] *= 0
-            # normals[min_range_index, axis] += 1
-
-            # # y行の点を抽出
-            # range_points_index = np.where(points[:, Coordinate.Y.value] == y)[0]
-            # if range_points_index.shape[0] == 0:
-            #     continue
-            # # 特定のy座標に対応する行のデータ
-            # selected_rows = points[range_points_index]
-
-            # # 最大の要素のインデックスを取得
-            # max_index_within_selected_rows = np.argmax(selected_rows[:, Coordinate.Y.value])
-            # # 元の配列での最大の要素のインデックス
-            # max_index = range_points_index[max_index_within_selected_rows]
-            # # 法線ベクトルの補正
-            # normals[max_index] *= 0
-            # normals[max_index, axis] += 1
-
-            # # 最小の要素のインデックスを取得
-            # min_index_within_selected_rows = np.argmin(selected_rows[:, Coordinate.Y.value])
-            # # 元の配列での最大の要素のインデックス
-            # min_index = range_points_index[min_index_within_selected_rows]
-            # # 法線ベクトルの補正
-            # normals[min_index] *= 0
-            # normals[min_index, axis] -= 1
-
-        # correct_index.append(max_range_index)
-        # correct_index.append(min_range_index)
 
         return normals, correct_index

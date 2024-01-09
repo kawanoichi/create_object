@@ -107,12 +107,12 @@ class EditNormal:
         if category == "0":
             # True False
             self.correct_process1(points, normals, vector_index_list,
-                                  X=True, Y=False, Z=False)
-            # self.correct_process2(work_points, normals, vector_index_list,
-            #                       coordi_index=Coordinate.Z.value,
-            #                       line_thre=140,
-            #                       execute_vertical=False, execute_horizonta=True)
-            # self.correct_process3(work_points, normals)
+                                  X=True, Y=True, Z=True)
+            self.correct_process2(work_points, normals, vector_index_list,
+                                  coordi_index=Coordinate.Z.value,
+                                  line_thre=140,
+                                  execute_vertical=False, execute_horizonta=True)
+            self.correct_process3(work_points, normals)
 
         # 椅子
         elif category == "1":
@@ -121,7 +121,7 @@ class EditNormal:
                                   X=True, Y=True, Z=True)
             self.correct_process2(work_points, normals, vector_index_list,
                                   coordi_index=Coordinate.X.value,
-                                  line_thre=110,
+                                  line_thre=120,
                                   execute_vertical=True, execute_horizonta=True)
             self.correct_process3(work_points, normals)
         else:
