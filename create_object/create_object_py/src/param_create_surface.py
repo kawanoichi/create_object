@@ -18,12 +18,12 @@ class Param:
     以下切り替え用
     """
     # 法線ベクトルの編集処理の有無
-    # edit_normal = True
+    edit_normal = True
 
     # 作業過程のグラフの表示
     # show_vector26 = True
     work_process = True
-    output_image = True
+    # output_image = True
 
     # meshなしplyファイルを作成するか
     # point_only = True

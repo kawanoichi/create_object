@@ -7,6 +7,8 @@ from itertools import cycle
 from param_create_surface import Param
 from calculator import Calculator
 from coordinate import Coordinate
+from my_plt import MyPlt
+
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
@@ -18,6 +20,7 @@ class EditNormalMethod:
         self.vectors_26 = vectors_26
         self.develop = develop
         self.log = log  # ログ用
+        self.myplt_work = MyPlt(max_graph_num=6)
 
         # オブジェクトの正面方向
         self.front_vector = np.array([0, 0, 1])
@@ -167,7 +170,6 @@ class EditNormalMethod:
         lines = cv2.HoughLinesP(reversed_gray, rho=1,
                                 theta=np.pi/180, threshold=line_thre,
                                 minLineLength=int(img.shape[0]*0.25), maxLineGap=200)
-        lines = lines[:, 0, :]
 
         # 線が見つからない場合
         if lines is None:
@@ -178,6 +180,8 @@ class EditNormalMethod:
             self.log.add(title="Detect lines", log="None")  # ログ
             return None, None, None
         self.log.add(title="Detect lines", log=lines.shape)  # ログ
+        
+        lines = lines[:, 0, :]
 
         # 作業用: 検出したすべての線の表示
         if Param.work_process and Param.output_image and self.develop:
@@ -299,22 +303,6 @@ class EditNormalMethod:
         return lines, vertical_lines, horizontal_lines
 
 
-    def organize_line(self, points, lines, face_axis=0):
-        """検出したラインの整理を行う.
-        Args:
-            face_axis: 2次元画像上の面が向いている方向 0(x) or 1(y)
-        """
-        max = np.amax(points[:, face_axis], axis=0)
-        min = np.amin(points[:, face_axis], axis=0)
-
-        slope_list = np.array([])
-        for line in lines:
-            slope = Calculator.calculate_slope(line)
-            slope_list = np.append(slope_list, np.round(slope))
-        
-        return lines
-        
-
     def reverse_vector(self, normal, vector_26_index, face_axis=None):
         """ベクトルを逆にする関数."""
         vector = self.vectors_26[vector_26_index]
@@ -334,9 +322,6 @@ class EditNormalMethod:
             vector_index_list: 26方位に分類したときのindexを格納した配列
             face_axis: 面面を表す法線ベクトルの座標系 ※0(x) or 1(y) or 2(z)
         """
-        # lines = self.organize_line(lines)
-        # exit()
-        
         if lines.shape[0] == 1 and face_axis == Coordinate.Y.value:
             # y1, y2が両方とも正である場合は上にする。
             # 下の場合は危険だからしないでおく？
@@ -354,43 +339,44 @@ class EditNormalMethod:
                             normals[i, face_axis] *= -1
             return 
 
-        if lines.shape[0] == 2 and face_axis == Coordinate.Y.value:
-            slope_thre = 5
-            slope_list = np.array([])
-            line_dis_thre = 100
-            for i, line in enumerate(lines):
-                slope = Calculator.calculate_slope(line)
-                slope_list = np.append(slope_list, slope)
-            # 平行でない場合
-            if abs(slope_list[0] - slope_list[1]) > slope_thre:
-                return
-            # 平行だけど離れている場合
-            elif abs(lines[0,1] - lines[1,1]) > line_dis_thre:
-                # ベクトルを上にする
-                diff_coordi_thre = 30
-                line_axis = 1
-                target_vec_index = np.where(self.vectors_26[:, face_axis] == -1)[0]
-                for i, point in enumerate(points):
-                # for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
-                    for line in lines:
-                        # 各ラインについて見ていく
-                        dis = abs(point[face_axis] - line[line_axis])  # ラインとの距離を算出
-                        # ラインから点が近い場合
-                        if dis < diff_coordi_thre and normals[i, face_axis] < 0:
-                            # print(f"normals[i, face_axis]:{normals[i, face_axis]}")
-                            normals[i, face_axis] *= -1
-                return 
+        # if lines.shape[0] == 2 and face_axis == Coordinate.Y.value:
+        #     slope_thre = 5
+        #     slope_list = np.array([])
+        #     line_dis_thre = 100
+        #     for i, line in enumerate(lines):
+        #         slope = Calculator.calculate_slope(line)
+        #         slope_list = np.append(slope_list, slope)
+        #     # 平行でない場合
+        #     if abs(slope_list[0] - slope_list[1]) > slope_thre:
+        #         return
+        #     # 平行だけど離れている場合
+        #     elif abs(lines[0,1] - lines[1,1]) > line_dis_thre:
+        #         # ベクトルを上にする
+        #         diff_coordi_thre = 30
+        #         line_axis = 1
+        #         target_vec_index = np.where(self.vectors_26[:, face_axis] == -1)[0]
+        #         for i, point in enumerate(points):
+        #         # for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
+        #             for line in lines:
+        #                 # 各ラインについて見ていく
+        #                 dis = abs(point[face_axis] - line[line_axis])  # ラインとの距離を算出
+        #                 # ラインから点が近い場合
+        #                 if dis < diff_coordi_thre and normals[i, face_axis] < 0:
+        #                     # print(f"normals[i, face_axis]:{normals[i, face_axis]}")
+        #                     normals[i, face_axis] *= -1
+        #         return 
         
         # if lines.shape[0] == 3:
         if lines.shape[0] == 3 and face_axis == Coordinate.Z.value:
-            
+            print(lines)
+            """
             # ラインのx軸の中心座標を求める
             posi_list = np.array([])
             for i, line in enumerate(lines):
                 x1, _, x2, _ = line
                 posi_list = np.append(posi_list, np.mean([x1, x2]))
             
-            # ライン動詞の距離を求める
+            # ライン同士の距離を求める
             diff_posi_list = np.array([])
             for i in range(1, posi_list.shape[0]):
                 diff_posi = abs(posi_list[i-1]-posi_list[i])
@@ -400,7 +386,9 @@ class EditNormalMethod:
                 lines = lines[1:]
             else:
                 lines = lines[:-1]
-            # return    
+            # """
+            lines = lines[:-1]
+            print(lines)
         
         if face_axis == Coordinate.X.value:
             raise ()
@@ -468,6 +456,18 @@ class EditNormalMethod:
                             normals[i] = self.reverse_vector(
                                 normals[i], vec_index, face_axis)
                             correct_odd_index.append(i)  # 青
+        
+        self.log.add(title="len correct_even_index at inversion",
+                     log=len(correct_even_index))
+        self.log.add(title="len correct_odd_index at inversion",
+                     log=len(correct_odd_index))
+
+        self.myplt_work.show_point(
+            points * 0.001, title="point")
+        self.myplt_work.show_correct_point(
+            points * 0.001, correct_even_index, correct_odd_index, title="None")
+
+        print("AAAAAAAAAAAA")
 
     def correct_edge_point(self, points, normals, axis=Coordinate.X.value):
         """一番端にある点群を外側に向ける関数.
@@ -547,3 +547,7 @@ class EditNormalMethod:
                     count += 1
 
         return normals, correct_index
+
+
+    def show_work_process(self):
+         self.myplt_work.show_result()

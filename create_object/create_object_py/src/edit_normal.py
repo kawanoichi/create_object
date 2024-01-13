@@ -55,12 +55,14 @@ class EditNormal:
         _, vertical_line, horizontal_line = self.edit_normal.detect_line(
             img, line_thre)
 
-        if len(vertical_line) > 0 and execute_vertical is True:
-            self.edit_normal.inversion_normal(points, normals, vertical_line,
-                                              vector_index_list, Coordinate.Z.value)
-        if len(horizontal_line) > 0 and execute_horizonta is True:
-            self.edit_normal.inversion_normal(points, normals, horizontal_line,
-                                              vector_index_list, Coordinate.Y.value)
+        if vertical_line is not None:
+            if len(vertical_line) > 0 and execute_vertical is True:
+                self.edit_normal.inversion_normal(points, normals, vertical_line,
+                                                vector_index_list, Coordinate.Z.value)
+        if horizontal_line is not None:
+            if len(horizontal_line) > 0 and execute_horizonta is True:
+                self.edit_normal.inversion_normal(points, normals, horizontal_line,
+                                                vector_index_list, Coordinate.Y.value)
 
     def correct_process3(self, points, normals):
         """法線ベクトル修正処理３.
@@ -119,12 +121,19 @@ class EditNormal:
             # True False
             self.correct_process1(points, normals, vector_index_list,
                                   X=True, Y=True, Z=True)
+            # self.correct_process2(work_points, normals, vector_index_list,
+            #                       coordi_index=Coordinate.X.value,
+            #                       line_thre=120,
+            #                       execute_vertical=True, execute_horizonta=True)
             self.correct_process2(work_points, normals, vector_index_list,
-                                  coordi_index=Coordinate.X.value,
+                                  coordi_index=Coordinate.Z.value,
                                   line_thre=120,
                                   execute_vertical=True, execute_horizonta=True)
-            self.correct_process3(work_points, normals)
+            # self.correct_process3(work_points, normals)
         else:
             raise Exception("Category Error")
+
+
+        self.edit_normal.show_work_process()
 
         return normals
