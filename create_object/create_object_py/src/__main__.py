@@ -14,10 +14,26 @@ DATA_DIR_PATH = "/var/www/html/storage/app/public/data"
 class CreateObject:
     def __init__(self,
                  category_file=os.path.join(SCRIPT_DIR_PATH, "category.json")):
+        self.write_param(os.path.join(SCRIPT_DIR_PATH, 'param.json'))
         with open(category_file) as fp:
             self.category_data = json.load(fp)
+        self.point_num = 2048
 
-    def main(self, image_name, category_num, develop, execute_web):
+    def write_param(self, param_path):
+        # JSONファイルからデータを読み込む
+        with open(param_path, 'r') as json_file:
+            Param = json.load(json_file)
+
+        # データの変更
+        Param['develop'] = False
+
+        # 変更したデータをJSONファイルに書き込む
+        with open(param_path, 'w') as json_file:
+            json.dump(Param, json_file, indent=2)
+
+
+
+    def main(self, image_name, category_num, develop):
         print("main実行OK")
         global DATA_DIR_PATH
         success = True
@@ -29,7 +45,7 @@ class CreateObject:
 
         # model path
         model_path = os.path.join(
-            WORK_DIR_PATH, "learned_model", category_name+"_modelG_50.pth")
+            WORK_DIR_PATH, "learned_model", str(self.point_num), category_name+"_modelG_50.pth")
 
         # file name
         npy_file_name = os.path.splitext(image_name)[0] + ".npy"
@@ -77,8 +93,7 @@ class CreateObject:
         try:
             ms = MakeSurface(point_dir=npy_dir_path,
                              ply_save_dir=ply_dir_path)
-            ms.main(npy_file_name, category=category_num,
-                    execute_web=execute_web)
+            ms.main(npy_file_name, category=category_num)
         except Exception as e:
             print(f"python script error:\n{e} (3)\n")
             success = False
@@ -115,7 +130,6 @@ if __name__ == "__main__":
     parser.add_argument('--catecory_number', "-category", type=str,
                         default=0, help='生成するオブジェクトのカテゴリ')
     parser.add_argument('--develop', action='store_true', help='開発用フラグ')
-    parser.add_argument('--web', action='store_true', help='開発用フラグ')
 
     # コマンドライン引数の解析
     args = parser.parse_args()
@@ -123,7 +137,6 @@ if __name__ == "__main__":
     create = CreateObject()
     success = create.main(image_name=args.img_name,
                           category_num=args.catecory_number,
-                          develop=args.develop,
-                          execute_web=args.web)
+                          develop=args.develop)
     print(f"Python is success") if success else print(f"Python is failed")
     print("###########")

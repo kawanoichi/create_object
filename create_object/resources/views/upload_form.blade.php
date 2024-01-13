@@ -9,11 +9,11 @@
     <!-- 文字コード -->
     <meta charset="UTF-8">
     <!-- 自動更新 -->
-    <meta http-equiv="refresh" content="3"> 
+    <!-- <meta http-equiv="refresh" content="3">  -->
     <!-- 異なるデバイスの画面サイズに適応 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- 外部CSSの読み込み -->
-    <link rel="stylesheet" href="css/upload_form.css" type="text/css"> 
+    <!-- <link rel="stylesheet" href="css/upload_form.css" type="text/css">  -->
     <title>Image Upload</title>
 </head>
 
@@ -54,19 +54,21 @@
             <!-- 画像のアップロードボタン -->
             <p>画像のアップロード</p>
             @csrf
-            <label for="inputImage" class="custom-image-input">
+            <label for="image_button" class="custom-image-input">
                 画像ファイルを選択
             </label>
-            <input id="image_button" type="file" id="inputImage" name="image" accept="image/*">
+            <input id="image_button" type="file" name="image" accept="image/*">
+            <p>選択されていません</p>
+            
             <br>
             
             <p>オブジェクトのカテゴリを選択してください</p>
             <!-- ラジオボタン -->
-            <input id="radio" type="radio" name="selectCategory" value="0"> Airplane
+            <input class="radio" id="radio1" type="radio" name="selectCategory" value="0"> Airplane
             <br>
-            <input id="radio" type="radio" name="selectCategory" value="1"> Table
+            <input class="radio" id="radio2" type="radio" name="selectCategory" value="1"> Table
             <br>
-            <input id="radio" type="radio" name="selectCategory" value="2"> Chair
+            <input class="radio" id="radio3" type="radio" name="selectCategory" value="2"> Chair
             <br>
             <button type="submit">アップロード</button>
         </form>

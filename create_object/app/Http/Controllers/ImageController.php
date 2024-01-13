@@ -66,8 +66,7 @@ class ImageController extends Controller
         $output = [];
         $returnCode = 0;
         // poetry run python3 -m src -img airplane.png -category 0
-        exec("{$executePythonCommand} -img {$imageName} -category {$selectedOption} --web", $output, $exitCode);
-        
+        exec("{$executePythonCommand} -img {$imageName} -category {$selectedOption}", $output, $exitCode);
         $extension = pathinfo($imageName, PATHINFO_EXTENSION);
         $plyFileName = str_replace($extension, 'ply', $imageName);
         $path = storage_path("app/public/data/{$plyFileName}");

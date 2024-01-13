@@ -3,20 +3,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math
-from param_create_surface import Param
 
 
 class MyPlt:
     def __init__(self, max_graph_num):
-        import matplotlib
-
-        if Param.output_image:
-            matplotlib.use('Agg')
-        else:
-            # 最初は以下を実行する
-            # $ sudo apt-get install python3-tk
-            matplotlib.use('TKAgg')
-
         # 表示する点群(散布図)に関する変数
         self.fig = plt.figure()  # 表示するグラフ
         self.fig_horizontal = 3
@@ -153,7 +143,8 @@ class MyPlt:
                 ax.quiver(points[i, 0], points[i, 1], points[i, 2],
                           normals[i, 0]*scale, normals[i, 1]*scale, normals[i, 2]*scale, color='r', length=1.0, normalize=True)
 
-    def show_vector(self, vector, title="None") -> None:
+    @staticmethod
+    def show_vector(vector) -> None:
         """原点を視点とした３次元ベクトルを表示する関数."""
 
         graph_size = 1.5
@@ -177,7 +168,13 @@ class MyPlt:
         plt.show()
 
     def show_result(self) -> None:
+        import matplotlib
+        matplotlib.use('Agg')
         plt.show()
 
     def save_result(self, save_path) -> None:
+        import matplotlib
+        # 最初は以下を実行する
+        # $ sudo apt-get install python3-tk
+        matplotlib.use('TKAgg')
         plt.savefig(save_path)

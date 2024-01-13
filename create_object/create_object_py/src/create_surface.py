@@ -11,9 +11,9 @@ $ make surface_run
 import open3d as o3d
 import numpy as np
 import os
+import json
 
-from src.edit_normal import EditNormal
-from param_create_surface import Param
+from edit_normal import EditNormal
 from log import Log
 from my_plt import MyPlt
 
@@ -22,20 +22,27 @@ SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
 WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
+json_path = os.path.join(SCRIPT_DIR_PATH, 'param.json')
+with open(json_path, 'r') as json_file:
+    Param = json.load(json_file)
+
 
 class MakeSurface:
     """点群から表面を作りplyファイルに保存するクラス."""
 
-    def __init__(self, point_dir, ply_save_dir,
-                 vectors_26_path=os.path.join(SCRIPT_DIR_PATH, "vector26.npy")) -> None:
+    def __init__(self, point_dir, ply_save_dir) -> None:
         """コンストラクタ.
 
         Args:
             point_file (str): 点群ファイル(.npy)
         """
+        # パラメータ読み込み
+        self.read_param(os.path.join(SCRIPT_DIR_PATH, 'param.json'))
         # ログ用
         self.log = Log()
-        self.myplt = MyPlt(max_graph_num=6)
+
+        if self.execute_plt:
+            self.myplt = MyPlt(max_graph_num=6)
 
         # Path
         self.point_dir = point_dir
@@ -44,14 +51,25 @@ class MakeSurface:
         self.check_exist(self.point_dir)
         self.check_exist(self.ply_save_dir)
 
-        self.groupe = None
+    def read_param(self, json_path):
+        """パラメータを読み込む関数."""
+        with open(json_path, 'r') as json_file:
+            Param = json.load(json_file)
 
-        # 26方位ベクトルの作成([x, y, z])
-        self.check_exist(vectors_26_path)
-        self.vectors_26 = np.load(vectors_26_path)
-        if Param.show_vector26:
-            self.myplt.show_vector(self.vectors_26, title="vectors_26")
-            return
+        # 補正処理
+        self.edit_normal = Param["edit_normal"] or not Param["develop"]
+        # グラフ作成
+        self.execute_plt = Param["execute_plt"] and Param["develop"]
+        # グラフ書き出し
+        self.output_image = Param["output_image"] and Param["develop"]
+        # 点群ファイルをply形式で保存
+        self.point_only = Param["point_only"] and Param["develop"]
+        # 点群の表示
+        self.show_point = Param["show_point"] and Param["develop"]
+        # 法線ベクトルの表示
+        self.show_normal = Param["show_normal"] and Param["develop"]
+        # メッシュの表示
+        self.show_mesh = Param["show_mesh"] and Param["develop"]
 
     @staticmethod
     def check_exist(path):
@@ -88,7 +106,7 @@ class MakeSurface:
         # 座標データに回転行列を適用
         return np.dot(points, rotation_matrix.T)
 
-    def main(self, point_file_name, category=0, develop=False, execute_web=False) -> None:
+    def main(self, point_file_name, category=0) -> None:
         """点群をメッシュ化し、表示する関数."""
         """
         パス設定
@@ -110,13 +128,15 @@ class MakeSurface:
         """
         # 点群データの読み込み
         points = np.load(point_path)
-        if develop:
-            self.log.add(title="points.shape", log=points.shape)
-        self.myplt.show_point(points, title="Input Point")  # グラフの追加
+        self.log.add(title="points.shape", log=points.shape)
+        if self.execute_plt:
+            self.myplt.show_point(points, title="Input Point")  # グラフの追加
 
         # オブジェクトの向きを調整
         points = self.rotate_object(points, angle=-90, axis="z")
-        self.myplt.show_point(points, title="Rotated Input Point")  # グラフに追加
+        if self.execute_plt:
+            self.myplt.show_point(
+                points, title="Rotated Input Point")  # グラフに追加
 
         # NumPyの配列からPointCloudを作成
         point_cloud = o3d.geometry.PointCloud()
@@ -128,47 +148,15 @@ class MakeSurface:
 
         """法線ベクトルの修正"""
         normals = np.asarray(point_cloud.normals)  # numpy配列に変換
-
-        if (Param.edit_normal and develop) or execute_web:
+        if self.edit_normal:
             # メッシュ変数メソッドの実行
-            edit = EditNormal(vectors_26=self.vectors_26,
-                              develop=develop,
-                              log=self.log)
-            # edited_normals, correct_even_index, correct_odd_index, correct_index = \
+            edit = EditNormal(log=self.log)
             edited_normals = edit.main(category, points, normals)
-
             # 法線ベクトルの更新
             if edited_normals is not None:
-                self.log.add(title="Correct Normals", log="True")
                 normals = edited_normals
-            else:
-                self.log.add(title="Correct Normals", log="False")
-
-            # if correct_even_index is not None and correct_odd_index is not None:
-            #     self.log.add(title="correct_even_index len",
-            #                  log=len(correct_even_index))
-            #     self.log.add(title="correct_odd_index len",
-            #                  log=len(correct_odd_index))
-            #     self.myplt.show_correct_point_2D(
-            #         points, correct_even_index, correct_odd_index, title="Correct Point 2D")
-            #     self.myplt.show_correct_point(
-            #         points, correct_even_index, correct_odd_index, title="Correct Point 3D")
-
-            # if correct_index is not None:
-            #     self.myplt.show_point(
-            #         points[correct_index], title="Correct Point")
-
-        """作業用
-        delete_index = []
-        for i, point in enumerate(points):
-            if point[1] > 0:
-                delete_index.append(i)
-        points = np.delete(points, delete_index, 0)
-        normals = np.delete(normals, delete_index, 0)
-        # """
 
         # 法線ベクトルの更新
-        point_cloud.points = o3d.utility.Vector3dVector(points)
         point_cloud.normals = o3d.utility.Vector3dVector(normals)
 
         """メッシュ作成"""
@@ -187,34 +175,35 @@ class MakeSurface:
         o3d.io.write_triangle_mesh(save_mesh_path, recMeshBPA)
 
         """開発用"""
-        if develop:
             # 点群ファイルの保存
-            if Param.point_only:
-                o3d.io.write_point_cloud(save_point_path, point_cloud)
+        if self.point_only:
+            o3d.io.write_point_cloud(save_point_path, point_cloud)
 
-            # 点群や法線ベクトルの表示
-            if Param.work_process:
-                self.myplt.save_result(os.path.join(WORK_DIR_PATH, 'result.png')) \
-                    if Param.output_image else self.myplt.show_result()
+        # 点群や法線ベクトルの表示
+        if self.execute_plt:
+            if self.output_image:
+                self.myplt.save_result(os.path.join(WORK_DIR_PATH, 'result.png'))
+            else:
+                self.myplt.show_result()
 
-            # ディスプレイのサイズを取得
-            screen_size = [2560//3, 1440//3]
+        # ディスプレイのサイズを取得
+        screen_size = [2560//3, 1440//3]
 
-            # 点群の表示
-            if Param.show_point:
-                # ウィンドウの幅と高さをディスプレイのサイズに設定して描画
-                o3d.visualization.draw_geometries(
-                    [point_cloud], width=screen_size[0], height=screen_size[1])
+        # 点群の表示
+        if self.show_point:
+            # ウィンドウの幅と高さをディスプレイのサイズに設定して描画
+            o3d.visualization.draw_geometries(
+                [point_cloud], width=screen_size[0], height=screen_size[1])
 
-            # 法線の表示
-            if Param.show_normal:
-                # ウィンドウの幅と高さをディスプレイのサイズに設定して描画
-                o3d.visualization.draw_geometries(
-                    [point_cloud], point_show_normal=True, width=screen_size[0], height=screen_size[1])
-            # メッシュの表示
-            if Param.show_mesh:
-                o3d.visualization.draw_geometries(
-                    [recMeshBPA], width=screen_size[0], height=screen_size[1])
+        # 法線の表示
+        if self.show_normal:
+            # ウィンドウの幅と高さをディスプレイのサイズに設定して描画
+            o3d.visualization.draw_geometries(
+                [point_cloud], point_show_normal=True, width=screen_size[0], height=screen_size[1])
+        # メッシュの表示
+        if self.show_mesh:
+            o3d.visualization.draw_geometries(
+                [recMeshBPA], width=screen_size[0], height=screen_size[1])
 
         return save_mesh_path
 
@@ -254,13 +243,11 @@ if __name__ == "__main__":
 
     try:
         ms.main(point_file_name=image_name,
-                category=args.catecory_number,
-                develop=True)
+                category=args.catecory_number)
         # 処理時間計測用
         execute_time = time.time() - start
         ms.log.add(title="Execution time", log=str(execute_time)[:5]+"s")
     finally:
-        # pass
         ms.log.show()
 
     print("終了")

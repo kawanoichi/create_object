@@ -1,15 +1,40 @@
-import numpy as np
+import os
+import json
+SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
 
-# ソートしたい配列
-arr = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
+"""
+# JSONファイルからデータを読み込む
+json_path = os.path.join(SCRIPT_DIR_PATH, 'param.json')
+with open(json_path, 'r') as json_file:
+    Param = json.load(json_file)
 
-# ソート後のインデックスを取得
-sorted_indices = np.argsort(arr)
+# データの変更
+Param['web'] = True
 
-# ソート後の配列
-sorted_arr = arr[sorted_indices]
+# 変更したデータをJSONファイルに書き込む
+with open(json_path, 'w') as json_file:
+    json.dump(Param, json_file, indent=2)
 
-# 結果を表示
-print("元の配列:", arr)
-print("ソート後の配列:", sorted_arr)
-print("ソート後のインデックス:", sorted_indices)
+print(Param.web)
+# """
+
+# # JSONファイルからデータを読み込む
+# with open('zikken.json', 'r') as json_file:
+#     Param = json.load(json_file)
+
+# # データの変更
+# Param['web'] = True
+
+# # 変更したデータをJSONファイルに書き込む
+# with open('zikken.json', 'w') as json_file:
+#     json.dump(Param, json_file, indent=2)
+
+flag = True
+
+print(not flag)
+
+if 0:
+    print("1")
+else:
+    print(2)

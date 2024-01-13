@@ -1,0 +1,17 @@
+{
+  "true false": "comment",
+  "develop": false,
+  "create_surface.py": "comment",
+  "edit_normal": true,
+  "execute_plt": true,
+  "output_image": false,
+  "point_only": true,
+  "show_point": true,
+  "show_normal": true,
+  "show_mesh": true,
+  "edit_normal.py": "comment",
+  "show_vector26": false,
+  "edit_process": true,
+  "show_edit_process": true,
+  "save_edit_image": false
+}

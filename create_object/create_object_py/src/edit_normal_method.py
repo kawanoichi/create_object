@@ -3,12 +3,9 @@ import cv2
 import numpy as np
 from itertools import cycle
 
-
-from param_create_surface import Param
 from calculator import Calculator
 from coordinate import Coordinate
 from my_plt import MyPlt
-
 
 SCRIPT_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR_PATH = os.path.dirname(SCRIPT_DIR_PATH)
@@ -16,9 +13,8 @@ WORK_DIR_PATH = os.path.join(PROJECT_DIR_PATH, "data")
 
 
 class EditNormalMethod:
-    def __init__(self, vectors_26, develop=False, log=None):
+    def __init__(self, vectors_26, log=None):
         self.vectors_26 = vectors_26
-        self.develop = develop
         self.log = log  # ログ用
         self.myplt_work = MyPlt(max_graph_num=6)
 
@@ -66,7 +62,8 @@ class EditNormalMethod:
                 if symmetry == "line":
                     normals[i, coordi_index] *= -1
 
-    def draw_point_cloud_axes(self, points, vector_index_list, coordi_index: int, all_point=False):
+    def draw_point_cloud_axes(self, points, vector_index_list,
+                              coordi_index: int, all_point=False):
         """各座標軸に対して描画する関数."""
 
         """画像のサイズを決定する"""
@@ -105,7 +102,7 @@ class EditNormalMethod:
 
         """画像に点を記述"""
         # NOTE: img[y,x]に注意
-        # 側面画像
+        # 側面画像(yz)
         correct_value = 2
         if coordi_index == Coordinate.X.value:
             for point, vec_index in zip(points, vector_index_list):
@@ -117,8 +114,7 @@ class EditNormalMethod:
                 # 点を描画
                 img[y-correct_value:y+correct_value,
                     z-correct_value:z+correct_value] = [0, 0, 0]
-            img_name = "beside_yz.png"
-        # 上面画像
+        # 上面画像(zx)
         elif coordi_index == Coordinate.Y.value:
             for point, vec_index in zip(points, vector_index_list):
                 if not all_point and (
@@ -129,8 +125,7 @@ class EditNormalMethod:
                 # 点を描画
                 img[z-correct_value:z+correct_value,
                     x-correct_value:x+correct_value] = [0, 0, 0]
-            img_name = "upper_zx.png"
-        # 正面画像
+        # 正面画像(xy)
         elif coordi_index == Coordinate.Z.value:
             for point, vec_index in zip(points, vector_index_list):
                 if not all_point and (
@@ -141,13 +136,8 @@ class EditNormalMethod:
                 # 点を描画
                 img[y-correct_value:y+correct_value,
                     x-correct_value:x+correct_value] = [0, 0, 0]
-            img_name = "front_yx.png"
         else:
             raise ()
-
-        self.log.add(title="Line Image Name", log=img_name)
-        if Param.work_process and Param.output_image and self.develop:
-            cv2.imwrite(os.path.join(WORK_DIR_PATH, img_name), img)
 
         return img
 
@@ -173,26 +163,16 @@ class EditNormalMethod:
 
         # 線が見つからない場合
         if lines is None:
-            if Param.work_process and Param.output_image and self.develop:
-                detect_line_img = img.copy()
-                cv2.imwrite(os.path.join(WORK_DIR_PATH,
-                            'detect_line.png'), detect_line_img)
-            self.log.add(title="Detect lines", log="None")  # ログ
             return None, None, None
         self.log.add(title="Detect lines", log=lines.shape)  # ログ
-        
+
         lines = lines[:, 0, :]
 
-        # 作業用: 検出したすべての線の表示
-        if Param.work_process and Param.output_image and self.develop:
-            detect_line_img = img.copy()
-            # 描画
-            for line in lines:
-                x1, y1, x2, y2 = line
-                cv2.line(detect_line_img, (x1, y1), (x2, y2), (0, 0, 255), 5)
-            cv2.imwrite(os.path.join(WORK_DIR_PATH,
-                        'detect_line.png'), detect_line_img)
-            del detect_line_img
+        # 描画
+        detect_line_img = img.copy()
+        for line in lines:
+            x1, y1, x2, y2 = line
+            cv2.line(detect_line_img, (x1, y1), (x2, y2), (0, 0, 255), 5)
 
         """
         重複している線を削除
@@ -280,28 +260,26 @@ class EditNormalMethod:
                      log=horizontal_lines.shape)  # ログ
         self.log.add(title="Mearged Detect lines", log=lines.shape)  # ログ
 
-        if Param.work_process and Param.output_image and self.develop:
-            # 結果を表示
-            detect_line_img = img.copy()
-            colors = cycle([(0, 0, 255), (0, 255, 0),
-                           (255, 0, 0)])  # (B, G, R)
-            for line in lines:
-                x1, y1, x2, y2 = map(int, line)
-                color = next(colors)
-                cv2.line(detect_line_img, (x1, y1), (x2, y2), color, 5)
-            # diff_coordi_threの閾値の幅の確認
-            detect_line_img[:, 50:52] = [0, 0, 255]
-            detect_line_img[:, 50+diff_coordi_thre:52 +
-                            diff_coordi_thre] = [0, 0, 255]
-            # dis_threの閾値の幅の確認
-            detect_line_img[50:52, :] = [0, 0, 255]
-            detect_line_img[50+dis_thre:52+dis_thre,
-                            :] = [0, 0, 255]
-            cv2.imwrite(os.path.join(WORK_DIR_PATH,
-                        'detect_line_mearged.png'), detect_line_img)
+        # 結果を表示
+        selected_line_img = img.copy()
+        colors = cycle([(0, 0, 255), (0, 255, 0),
+                        (255, 0, 0)])  # (B, G, R)
+        for line in lines:
+            x1, y1, x2, y2 = map(int, line)
+            color = next(colors)
+            cv2.line(selected_line_img, (x1, y1), (x2, y2), color, 5)
+        # diff_coordi_threの閾値の幅の確認
+        selected_line_img[:, 50:52] = [0, 0, 255]
+        selected_line_img[:, 50+diff_coordi_thre:52 +
+                        diff_coordi_thre] = [0, 0, 255]
+        # dis_threの閾値の幅の確認
+        selected_line_img[50:52, :] = [0, 0, 255]
+        selected_line_img[50+dis_thre:52+dis_thre,
+                        :] = [0, 0, 255]
+        cv2.imwrite(os.path.join(WORK_DIR_PATH,
+                    'detect_line_mearged.png'), selected_line_img)
 
-        return lines, vertical_lines, horizontal_lines
-
+        return detect_line_img, selected_line_img, vertical_lines, horizontal_lines
 
     def reverse_vector(self, normal, vector_26_index, face_axis=None):
         """ベクトルを逆にする関数."""
@@ -328,16 +306,18 @@ class EditNormalMethod:
             if lines[0, 0] >= 0 and lines[0, 2] >= 0:
                 diff_coordi_thre = 40
                 line_axis = 1
-                target_vec_index = np.where(self.vectors_26[:, face_axis] == -1)[0]
+                target_vec_index = np.where(
+                    self.vectors_26[:, face_axis] == -1)[0]
                 for i, (point, vec_index) in enumerate(zip(points, vector_index_list)):
                     # 対象としている法線ベクトルの場合
                     if np.any(target_vec_index == vec_index):
                         # 各ラインについて見ていく
-                        dis = abs(point[face_axis] - lines[0, line_axis])  # ラインとの距離を算出
+                        dis = abs(point[face_axis] -
+                                  lines[0, line_axis])  # ラインとの距離を算出
                         # ラインから点が近い場合
                         if dis < diff_coordi_thre and normals[i, face_axis] < 0:
                             normals[i, face_axis] *= -1
-            return 
+            return
 
         # if lines.shape[0] == 2 and face_axis == Coordinate.Y.value:
         #     slope_thre = 5
@@ -364,8 +344,8 @@ class EditNormalMethod:
         #                 if dis < diff_coordi_thre and normals[i, face_axis] < 0:
         #                     # print(f"normals[i, face_axis]:{normals[i, face_axis]}")
         #                     normals[i, face_axis] *= -1
-        #         return 
-        
+        #         return
+
         # if lines.shape[0] == 3:
         if lines.shape[0] == 3 and face_axis == Coordinate.Z.value:
             print(lines)
@@ -389,7 +369,7 @@ class EditNormalMethod:
             # """
             lines = lines[:-1]
             print(lines)
-        
+
         if face_axis == Coordinate.X.value:
             raise ()
 
@@ -433,10 +413,11 @@ class EditNormalMethod:
                 for j, line in enumerate(lines):
                     # dis = abs(point[face_axis] - line[line_axis])  # ラインとの距離を算出
                     if face_axis == Coordinate.Z.value:
-                        point = np.array([z, y]) 
+                        point = np.array([z, y])
                     elif face_axis == Coordinate.Y.value:
-                        point = np.array([x, y]) 
-                    dis = Calculator.distance_point_to_line(line, point)  # ラインとの距離を算出
+                        point = np.array([x, y])
+                    dis = Calculator.distance_point_to_line(
+                        line, point)  # ラインとの距離を算出
                     if dis < min_dis:
                         near_line_index = j  # 一番近いラインの更新
                         min_dis = dis
@@ -456,7 +437,7 @@ class EditNormalMethod:
                             normals[i] = self.reverse_vector(
                                 normals[i], vec_index, face_axis)
                             correct_odd_index.append(i)  # 青
-        
+
         self.log.add(title="len correct_even_index at inversion",
                      log=len(correct_even_index))
         self.log.add(title="len correct_odd_index at inversion",
@@ -466,8 +447,6 @@ class EditNormalMethod:
             points * 0.001, title="point")
         self.myplt_work.show_correct_point(
             points * 0.001, correct_even_index, correct_odd_index, title="None")
-
-        print("AAAAAAAAAAAA")
 
     def correct_edge_point(self, points, normals, axis=Coordinate.X.value):
         """一番端にある点群を外側に向ける関数.
@@ -548,6 +527,5 @@ class EditNormalMethod:
 
         return normals, correct_index
 
-
     def show_work_process(self):
-         self.myplt_work.show_result()
+        self.myplt_work.show_result()
