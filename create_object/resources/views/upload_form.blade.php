@@ -13,7 +13,7 @@
     <!-- 異なるデバイスの画面サイズに適応 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- 外部CSSの読み込み -->
-    <!-- <link rel="stylesheet" href="css/upload_form.css" type="text/css">  -->
+    <link rel="stylesheet" href="css/upload_form.css" type="text/css"> 
     <title>Image Upload</title>
 </head>
 
@@ -22,64 +22,64 @@
     <div class="header">
         <h1>３Ⅾオブジェクト生成ツール</h1>
     </div>
-    
+
     <!-- Main -->
     <div class="main">
-        <!-- 以下 -->
-        <div id="clock"></div>
-
-        <script>
-        function updateClock() {
-            var now = new Date();
-            var hours = now.getHours();
-            var minutes = now.getMinutes();
-            var seconds = now.getSeconds();
-
-            // ゼロパディングを追加
-            hours = hours < 10 ? '0' + hours : hours;
-            minutes = minutes < 10 ? '0' + minutes : minutes;
-            seconds = seconds < 10 ? '0' + seconds : seconds;
-
-            var timeString = hours + ':' + minutes + ':' + seconds;
-            
-            // HTML要素に挿入
-            document.getElementById('clock').innerText = timeString;
-        }
-        // 初回表示
-        updateClock();
-        </script>
-        <!-- 以上 -->
+        <h1>画像から3Dオブジェクト(PLYファイル)に変換</h1>
 
         <form class = "upload" method="post" action="/upload" enctype="multipart/form-data">
             <!-- 画像のアップロードボタン -->
             <p>画像のアップロード</p>
             @csrf
             <label for="image_button" class="custom-image-input">
-                画像ファイルを選択
+                <p>画像を選択</p>
             </label>
             <input id="image_button" type="file" name="image" accept="image/*">
-            <p>選択されていません</p>
+            <!-- <p>選択されていません</p> -->
             
             <br>
-            
-            <p>オブジェクトのカテゴリを選択してください</p>
+            <p>オブジェクトのカテゴリを選択</p>
             <!-- ラジオボタン -->
-            <input class="radio" id="radio1" type="radio" name="selectCategory" value="0"> Airplane
-            <br>
-            <input class="radio" id="radio2" type="radio" name="selectCategory" value="1"> Table
-            <br>
-            <input class="radio" id="radio3" type="radio" name="selectCategory" value="2"> Chair
-            <br>
-            <button type="submit">アップロード</button>
+            <div class="select_category">
+                <ul>
+                <li>
+                    <input class="radio" id="radio1" type="radio" name="selectCategory" value="0">
+                    <label for="radio1">Airplane</label>
+                    <div class="check"></div>
+                </li>
+                
+                <li>
+                    <input class="radio" id="radio2" type="radio" name="selectCategory" value="1">
+                    <label for="radio2">Table</label>
+                    <div class="check"></div>
+                    <!-- <div class="check"><div class="inside"></div></div> -->
+                    
+                </li>
+                
+                <li>
+                    <input class="radio" id="radio3" type="radio" name="selectCategory" value="2">
+                    <label for="radio3">Chair</label>
+                    <div class="check"></div>
+                    <!-- <div class="check"><div class="inside"></div></div> -->
+                </li>
+                </ul>
+            </div>
+            <button type="submit">実行</button>
         </form>
-    
-        </div>
-    </div>
+<!--     
+        <p>
+        この下に JavaScript を使って文字列を出力します。
+        </p>
+
+        <script src="css/sample.js">
+        </script> -->
+
+</div>
 
     <!-- Footer -->
-    <div class="footer">
+    <!-- <div class="footer">
         <h1>Footer</h1>
-    </div>
+    </div> -->
     
 </body>
 </html>

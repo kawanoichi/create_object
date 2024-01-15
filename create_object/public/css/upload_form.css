@@ -1,11 +1,12 @@
 body {
     font-family: Georgia, serif;
-    background-color: lightgreen;
+    margin:0;
+    padding:0
 }
 div {
     display: flex;
     justify-content: center; /* 要素(文字等)を中心に*/
-    border: 3px solid black;
+    /* border: 3px solid black; */
 }
 
 /* ------------------ HEADER -------------------- */
@@ -14,6 +15,8 @@ div {
     width: 100%;
     background-color: rgba(255, 255, 255, 0.986);
     justify-content: left;
+    /* border-bottom: 100px solid;
+    border-image: linear-gradient(to bottom, white, rgb(62, 60, 60)) 1; */
 }
 
 .header h1 {
@@ -26,16 +29,12 @@ div {
     width: 100%;
     flex-direction: column;
     align-items: center;
-    background-color: lightblue;
+    /* background-color: lightblue; */
+    background-color: rgb(241, 245, 244);
 } 
 
-#clock {
-    width: 40%;
-    font-size: 50px;
-    background-color: lightcoral;
-    
-}
-.upload{ /* form */ 
+/* 画像アップロード */
+.upload{ 
     display: flex;
     justify-content: center; /* 要素(文字等)を中心に*/
 
@@ -45,14 +44,23 @@ div {
     background-color: lightgoldenrodyellow;
 }
 .custom-image-input{
-    /* display: flex; */
+    display: flex;
     height: 100px;
     width: 300px;
-    background-color: red;
-    /* background-color: rgb(157, 109, 235); */
+    background-color: white;
+    /* background-color: red; */
     cursor: pointer;
-    /* flex-direction: column; */
-    /* align-items: start; */
+    justify-content: center;
+    align-items: center;
+    border: 1px solid;
+    border-radius: 10px;
+}
+.custom-image-input p{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50%;
+    /* background-color: white; */
 }
 #image_button{
     border: 10px solid black;
@@ -61,10 +69,106 @@ input[type="file"] {
     /* ファイル入力を非表示にする */
     display: none;
 }
-.radio{
-    display: inline-block;
+
+/* ラジオボタン */
+.select_category{
+    /* display: block; */
+    flex-direction: column;
+    margin-bottom: 20px;
+    width: 300px;
+    padding: 10px;
+}
+.select_category ul{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    /* overflow: auto; */
+  }
+  
+ul li{
+    color: black;
+    /* color: red; */
+    display: block;
+    position: relative;
+    float: left;
+    width: 100%;
+    height: 40px;
+    /* left: -10px; */
+    /* margin: 0; */
+    border-bottom: 1px solid black;
+    /* border: 1px solid red; */
+  }
+  
+.select_category ul li input[type=radio]{
+    position: absolute; /* 他の要素の配置に影響を与えない */
+    visibility: hidden; /* 隠すだけでスペースは確保 */
+  }
+
+/* カテゴリ名の配置 */
+ul li label{
+    display: block;
+    text-align: center;
+    position: relative;
+    font-weight: 300;
+    font-size: 1.2em;
+    /* padding: 0px 25px 0px 50px; */
+    width: 100%;
+    left: 0px;
+    top: 1px;
+    bottom: 10px;
+    margin: 10px auto;
+    height: 40px;
+    z-index: 9;
+    cursor: pointer;
+    /* 変化のスピード？ */
+    -webkit-transition: all 0.25s linear; 
+    /* border: 1px solid blue; */
+  }
+
+  /* オリジナルラジオボタン */
+ul li .check{
+    display: block;
+    position: absolute;
+    border: 5px solid black;
+    border-radius: 100%;
+    height: 20px;
+    width: 20px;
+    top: 4px;
+    /* left: 10px; */
+    z-index: 5;
+    transition: border .25s linear;
+    -webkit-transition: border .25s linear;
+  }
+
+/* 内側選択後　緑 */
+ul li .check::before {
+  display: block;
+  position: absolute;
+  content: '';
+  border-radius: 100%;
+  height: 15px;
+  width: 15px;
+  top: 2.4px;
+  left: 2.5px;
+  margin: auto;
+  transition: background 0.25s linear;
+  -webkit-transition: background 0.25s linear;
 }
 
+/* 外周選択後　緑 */
+input[type=radio]:checked ~ .check {
+  border: 5px solid #0DFF92;
+}
+
+/* 内側選択後　緑 */
+input[type=radio]:checked ~ .check::before{
+  background: #0DFF92;
+}
+
+/* カテゴリ名選択後　緑 */
+input[type=radio]:checked ~ label{
+  color: #0DFF92;
+}
 
 /* ------------------ HOOTER -------------------- */
 .footer {

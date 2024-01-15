@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 */
 use App\Http\Controllers\PythonController;
 use App\Http\Controllers\ImageController;
+use App\Http\Controllers\ZikkenController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -27,3 +28,5 @@ Route::get('/', function () {
 Route::get('/upload-form', [ImageController::class, 'showForm']);
 Route::post('/upload', [ImageController::class, 'upload']);
 Route::get('/download/{imageName}', [ImageController::class, 'download'])->name('download');
+
+Route::get('/zikken', [ZikkenController::class, 'showForm']);
