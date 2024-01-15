@@ -1,46 +1,35 @@
+<!-- storage/app/public/data/default.png" -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- 文字コード -->
     <meta charset="UTF-8">
-    <!-- 異なるデバイスの画面サイズに適応 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 外部CSSの読み込み -->
-    <link rel="stylesheet" href="css/zikken.css" type="text/css"> 
-    <title>実験</title>
+    <title>JavaScript Example</title>
+    <!-- jQueryのCDNを読み込む -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 </head>
-
 <body>
-    
-    <ul>
-    <li>
-        <input type="radio" id="f-option" name="selector">
-        <label for="f-option">Pizza</label>
-        
-        <div class="check"></div>
-    </li>
-    
-    <li>
-        <input type="radio" id="s-option" name="selector">
-        <label for="s-option">Bacon</label>
-        
-        <div class="check"></div>
-        <!-- <div class="check"><div class="inside"></div></div> -->
-    </li>
-    
-    <li>
-        <input type="radio" id="t-option" name="selector">
-        <label for="t-option">Cats</label>
-        
-        <div class="check"><div class="inside"></div></div>
-    </li>
-    </ul>
+    <!-- フォームで選択した画像 -->
+    <img id="img" accept="image/*" src="default.png">
+
+    <div class="buttons">
+        <!-- フォーム -->
+        <input type="file" name="logo" id="form" accept=".jpg, .jpeg, .png, .gif">
+
+        <!-- 画像削除ボタン -->
+        <button type="button" id="delete">削除</button>
     </div>
 
-    <!-- <div class="signature">
-    <p>Made with <i class="much-heart"></i> by <a href="https://codepen.io/AngelaVelasquez">Angela Velasquez</a></p>
-    </div> -->
-
+    <script>
+        // 画像切り替え時にプレビュー表示
+        $('#form').on('change', function (e) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $("#img").attr('src', e.target.result);
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        });
+    </script>
 </body>
 </html>
-

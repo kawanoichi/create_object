@@ -15,6 +15,7 @@
     <!-- 外部CSSの読み込み -->
     <link rel="stylesheet" href="css/upload_form.css" type="text/css"> 
     <title>Image Upload</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 </head>
 
 <body>
@@ -32,7 +33,8 @@
             <p>画像のアップロード</p>
             @csrf
             <label for="image_button" class="custom-image-input">
-                <p>画像を選択</p>
+                <img id="img" accept="image/*" src="storage/app/public/data/default.png">
+                <p id="image_selection_text">画像を選択</p>
             </label>
             <input id="image_button" type="file" name="image" accept="image/*">
             <!-- <p>選択されていません</p> -->
@@ -43,7 +45,7 @@
             <div class="select_category">
                 <ul>
                 <li>
-                    <input class="radio" id="radio1" type="radio" name="selectCategory" value="0">
+                    <input class="radio" id="radio1" type="radio" name="selectCategory" value="0" checked>
                     <label for="radio1">Airplane</label>
                     <div class="check"></div>
                 </li>
@@ -64,18 +66,43 @@
                 </li>
                 </ul>
             </div>
-            <button type="submit">実行</button>
+            <label for="start_button" class="start-button">
+                <p>変換開始</p>
+            </label>
+            <button id="start_button" type="submit" onclick="checkImage()">実行</button>
         </form>
-<!--     
-        <p>
-        この下に JavaScript を使って文字列を出力します。
-        </p>
+    </div>
 
-        <script src="css/sample.js">
-        </script> -->
-
-</div>
-
+    <script>
+        // 画像切り替え時にプレビュー表示
+        $('#image_button').on('change', function (e) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $("#img").attr('src', e.target.result);
+                // 画像が選択されたら<img>を表示し、<p>を非表示にする
+                $("#img").show();
+                // 画像が選択されたら<p>を非表示にする
+                $("#image_selection_text").hide();
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        });
+    
+    
+        function checkImage() {
+            // alert('aa');
+            // フォームの画像要素を取得
+            var imageInput = document.getElementById('image_button');
+            // 選択されたファイルがあるかどうかを確認
+            if (imageInput.files.length === 0) {
+                // ファイルが選択されていない場合はアラートを表示
+                alert('画像を選択してください。');
+            } else {
+                // フォームを送信
+                document.getElementById('imageForm').submit();
+            }
+        }
+    </script>
+    
     <!-- Footer -->
     <!-- <div class="footer">
         <h1>Footer</h1>

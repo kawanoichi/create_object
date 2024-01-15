@@ -35,25 +35,31 @@ div {
 
 /* 画像アップロード */
 .upload{ 
-    display: flex;
-    justify-content: center; /* 要素(文字等)を中心に*/
-
-    flex-direction: column;
-    align-items: center;
-    width: 50%;
-    background-color: lightgoldenrodyellow;
+  display: flex;
+  justify-content: center; /* 要素(文字等)を中心に*/
+  
+  flex-direction: column;
+  align-items: center;
+  width: 50%;
+  background-color: lightgoldenrodyellow;
 }
 .custom-image-input{
-    display: flex;
-    height: 100px;
-    width: 300px;
-    background-color: white;
-    /* background-color: red; */
-    cursor: pointer;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid;
-    border-radius: 10px;
+  display: flex;
+  height: 200px;
+  width: 400px;
+  background-color: white;
+  /* background-color: red; */
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid;
+  border-radius: 10px;
+}
+img{
+  display: none;
+  height:180px;
+  /* width: 180px; */
+  border: 1px solid;
 }
 .custom-image-input p{
     display: flex;
@@ -170,10 +176,34 @@ input[type=radio]:checked ~ label{
   color: #0DFF92;
 }
 
+
+/* スタートボタン */
+.start-button{
+  display: flex;
+  height: 50px;
+  width: 150px;
+  background-color: white;
+  /* background-color: red; */
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: white;
+  background-color: red;
+}
+/* #start_button button{ */
+#start_button{
+  display: none;
+}
+
+
 /* ------------------ HOOTER -------------------- */
-.footer {
+/* .footer {
     height: 100px;
     width: 100%;
     font-size: 10px;
     background-color: rgba(255, 255, 255, 0.986);
-}
+} */
