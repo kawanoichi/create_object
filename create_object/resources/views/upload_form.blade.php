@@ -30,13 +30,13 @@
 
         <form class = "upload" method="post" action="/upload" enctype="multipart/form-data">
             <!-- 画像のアップロードボタン -->
-            <p>画像のアップロード</p>
-            @csrf
-            <label for="image_button" class="custom-image-input">
-                <img id="img" accept="image/*" src="storage/app/public/data/default.png">
-                <p id="image_selection_text">画像を選択</p>
-            </label>
-            <input id="image_button" type="file" name="image" accept="image/*">
+                <p>画像のアップロード</p>
+                @csrf
+                <label for="image_button" class="custom-image-input">
+                    <img id="img" accept="image/*" src="storage/app/public/data/default.png">
+                    <p id="image_selection_text">画像を選択</p>
+                </label>
+                <input id="image_button" type="file" name="image" accept=".png, .jpeg, .jpg">
             <!-- <p>選択されていません</p> -->
             
             <br>
